@@ -1249,8 +1249,9 @@ def export_gometry_as_obj(scene_file, scene):
                 print('Meshes directory did not exist, creating: ')
                 print(objFolderPath)
                 os.makedirs(objFolderPath)
-            #exportFilePath = os.path.join(filepath, 'meshes', (object.name + '.obj'))
-            bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True)
+                
+            bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True, axis_forward='Y', axis_up='Z')
+            
             scene_file.write('<shape type="obj">\n')
             scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
             scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
