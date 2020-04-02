@@ -11,26 +11,26 @@ from nodeitems_utils import (
 
 
 #nodecategory begin
-class MitsubaNodeCategory(NodeCategory):
-    @classmethod
-    def poll(cls, context):
-        #Do not add the PBRT shader category if PBRT is not selected as renderer
-        engine = context.scene.render.engine
-        if engine != 'Mitsuba2_Renderer':
-            return False
-        else:
-            b = False
-            if context.space_data.tree_type == 'ShaderNodeTree': b = True
-            return b
+#class MitsubaNodeCategory(NodeCategory):
+#    @classmethod
+#    def poll(cls, context):
+#        #Do not add the PBRT shader category if PBRT is not selected as renderer
+#        engine = context.scene.render.engine
+#        if engine != 'Mitsuba2_Renderer':
+#            return False
+#        else:
+#            b = False
+#            if context.space_data.tree_type == 'ShaderNodeTree': b = True
+#            return b
 
 # all categories in a list
-Mitsuba_node_categories = [
+#Mitsuba_node_categories = [
     # identifier, label, items list
     #MitsubaNodeCategory("SOMENODES", "PBRT", items=[
-    MitsubaNodeCategory("MSHADER", "Mitsuba", items=[
-        NodeItem("MitsubaCustomNodeType"),
-        ]),
-    ]
+ #   MitsubaNodeCategory("MSHADER", "Mitsuba", items=[
+ #       NodeItem("MitsubaCustomNodeType"),
+ #       ]),
+ #   ]
 
 #nodecategory end
 
@@ -43,24 +43,24 @@ class MitsubaTree(NodeTree):
     bl_icon = 'NODETREE'
 
 # Defines a poll function to enable filtering for various node tree types.
-class MitsubaTreeNode :
-    bl_icon = 'INFO'
-    @classmethod
-    def poll(cls, ntree):
-        b = False
-        # Make your node appear in different node trees by adding their bl_idname type here.
-        if ntree.bl_idname == 'ShaderNodeTree': b = True
-        return b
+#class MitsubaTreeNode :
+#    bl_icon = 'INFO'
+#    @classmethod
+#    def poll(cls, ntree):
+#        b = False
+#        # Make your node appear in different node trees by adding their bl_idname type here.
+#        if ntree.bl_idname == 'ShaderNodeTree': b = True
+#        return b
 
 # Derived from the Node base type.
-class MitsubaBSDF(Node,MitsubaTreeNode):
-    '''A custom node'''
-    bl_idname = 'MitsubaCustomNodeType'
-    bl_label = 'Mitsuba2 BSDF'
-    bl_icon = 'INFO'
+#class MitsubaBSDF(Node,MitsubaTreeNode):
+#    '''A custom node'''
+#    bl_idname = 'MitsubaCustomNodeType'
+#    bl_label = 'Mitsuba2 BSDF'
+#    bl_icon = 'INFO'
 
-    def uda(self, context):
-        self.update()
+#    def uda(self, context):
+#        self.update()
 
 # SEE HERE : https://docs.blender.org/api/current/bpy.types.Node.html?highlight=node#bpy.types.Node.socket_value_update
 # https://blender.stackexchange.com/questions/74645/alternative-update-callback-for-pointerproperty
@@ -134,8 +134,8 @@ class MitsubaBSDF(Node,MitsubaTreeNode):
                     print("Output socket {} is linked".format(skt.name))
 
 
-def register():
-    nodeitems_utils.register_node_categories("MitsubaCustomNodes", Mitsuba_node_categories)
+#def register():
+    #nodeitems_utils.register_node_categories("MitsubaCustomNodes", Mitsuba_node_categories)
     #bpy.utils.register_class(PbrtRenderSettingsPanel)
     # bpy.utils.register_class(PbrtMatte)
     # bpy.utils.register_class(PbrtMirror)
@@ -147,8 +147,8 @@ def register():
     # bpy.utils.register_class(PbrtSubstrate)
     # bpy.utils.register_class(PbrtPlastic)
 
-def unregister():
-    nodeitems_utils.unregister_node_categories("MitsubaCustomNodes")
+#def unregister():
+#    nodeitems_utils.unregister_node_categories("MitsubaCustomNodes")
     #bpy.utils.unregister_class(PbrtRenderSettingsPanel)
     # bpy.utils.unregister_class(PbrtMatte)
     # bpy.utils.unregister_class(PbrtMirror)
