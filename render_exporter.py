@@ -86,30 +86,13 @@ def export_point_lights(scene_file, scene):
             if la.type == "POINT" :
                 print('\n\nexporting lamp: ' + object.name + ' - type: ' + object.type)
                 print('\nExporting point light: ' + object.name)
-                bpy.ops.object.select_all(action='DESELECT')
-                
-                
+                #bpy.ops.object.select_all(action='DESELECT')
                 scene_file.write("\t<emitter type = \"point\" >\n")
                 scene_file.write("\t\t<transform name=\"to_world\">\n")
                 from_point=object.matrix_world.col[3]
                 scene_file.write("\t\t\t<translate value=\"%s, %s, %s\"/>\n" % (from_point.x, from_point.y, from_point.z))
                 scene_file.write("\t\t</transform>\n")
                 scene_file.write("\t</emitter>\n")
-            #<emitter type = "point" >
-            #    <transform name="to_world">
-            #        <translate value="7.358891487121582, -6.925790786743164, 4.958309173583984"/>
-            #    </transform>
-			#    <!-- intensity="1.0"-->
-            #</emitter>
-
-            #scene_file.write("AttributeBegin")
-            #scene_file.write("\n")
-            #from_point=object.matrix_world.col[3]
-            #scene_file.write("Translate\t%s %s %s\n" % (from_point.x, from_point.y, from_point.z))
-            #scene_file.write("LightSource \"point\"\n\"rgb I\" [%s %s %s]\n" % (bpy.data.objects[object.name].color[0], bpy.data.objects[object.name].color[1], bpy.data.objects[object.name].color[2]))
-            ##scene_file.write("LightSource \"point\"\n\"rgb I\" [%s %s %s]\n" % (nodes["Emission"].inputs[0].default_value[0], nodes["Emission"].inputs[0].default_value[1], nodes["Emission"].inputs[0].default_value[2]))
-            #scene_file.write("AttributeEnd")
-            #scene_file.write("\n\n")
 
     return ''
 
@@ -142,7 +125,17 @@ def export_camera(scene_file):
         at_point=at_point * -1
         at_point=at_point + from_point
 
-        scene_file.write('\t<sensor type="perspective">\n')
+        scene_file.write('\t<sensor type="thinlens">\n')
+        
+        scene_file.write('<string name="focal_length" value="50mm"/>\n')
+        scene_file.write('<float name="aperture_radius" value="0.5"/>\n')
+        scene_file.write('<float name="focus_distance" value="%s"/>' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
+
+        #Write out the sampler for the image.
+        scene_file.write('\t\t<sampler type="independent">\n')
+        scene_file.write('\t\t<integer name="sample_count" value="%s"/>\n' % bpy.data.scenes[0].spp)
+        scene_file.write('\t\t</sampler>\n')
+        
         scene_file.write('\t\t<transform name="to_world">\n')
         scene_file.write('\t\t\t<lookat\n origin="%s, %s, %s"\n target="%s, %s, %s"\n up="%s, %s, %s"\n/>\n' % \
                         (from_point.x, from_point.y, from_point.z, \
@@ -1249,7 +1242,7 @@ def export_gometry_as_obj(scene_file, scene):
                 print('Meshes directory did not exist, creating: ')
                 print(objFolderPath)
                 os.makedirs(objFolderPath)
-                
+
             bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True, axis_forward='Y', axis_up='Z')
             
             scene_file.write('<shape type="obj">\n')

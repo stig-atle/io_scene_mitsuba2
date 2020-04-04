@@ -37,10 +37,10 @@ from nodeitems_utils import (
 
 # Implementation of custom nodes from Python
 # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
-class MitsubaTree(NodeTree):
-    bl_idname = 'CustomTreeMitsuba'
-    bl_label = 'Mitsuba Node Tree'
-    bl_icon = 'NODETREE'
+#class MitsubaTree(NodeTree):
+#    bl_idname = 'CustomTreeMitsuba'
+#    bl_label = 'Mitsuba Node Tree'
+#    bl_icon = 'NODETREE'
 
 # Defines a poll function to enable filtering for various node tree types.
 #class MitsubaTreeNode :
@@ -53,14 +53,27 @@ class MitsubaTree(NodeTree):
 #        return b
 
 # Derived from the Node base type.
-#class MitsubaBSDF(Node,MitsubaTreeNode):
-#    '''A custom node'''
-#    bl_idname = 'MitsubaCustomNodeType'
-#    bl_label = 'Mitsuba2 BSDF'
-#    bl_icon = 'INFO'
+class MitsubaBSDF(Node, NodeTree):
+    '''A custom node'''
+    bl_idname = 'MitsubaCustomNodeType'
+    bl_label = 'Mitsuba2 BSDF'
+    bl_icon = 'INFO'
 
-#    def uda(self, context):
-#        self.update()
+    def uda(self, context):
+        self.update()
+    
+    @classmethod
+    def poll(cls, ntree):
+        b = False
+        if ntree.bl_idname == 'ShaderNodeTree':
+            b = True
+        return b
+
+    #def poll(cls, ntree):
+    #    b = False
+    #    # Make your node appear in different node trees by adding their bl_idname type here.
+    #    if ntree.bl_idname == 'ShaderNodeTree': b = True
+    #    return b
 
 # SEE HERE : https://docs.blender.org/api/current/bpy.types.Node.html?highlight=node#bpy.types.Node.socket_value_update
 # https://blender.stackexchange.com/questions/74645/alternative-update-callback-for-pointerproperty
