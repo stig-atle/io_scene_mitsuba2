@@ -313,11 +313,10 @@ def export_EnviromentMap(scene_file):
         shutil.copyfile(srcfile, dstdir)
 
         environmentmapscaleValue = bpy.data.scenes[0].environmentmapscale
-        scene_file.write("AttributeBegin\n")
-        scene_file.write(r'LightSource "infinite" "string mapname" "%s" "color scale" [%s %s %s]' % ("textures/" + environmentMapFileName,environmentmapscaleValue,environmentmapscaleValue,environmentmapscaleValue))
-        scene_file.write("\n")
-        scene_file.write("AttributeEnd")
-        scene_file.write("\n\n")
+        scene_file.write("\t<emitter type = \"envmap\" >\n")
+        scene_file.write('<string name="filename" value="textures/%s"/>\n' % (environmentMapFileName))
+        scene_file.write('\t\t\t<float name=/"scale/" value=\"%s\"/>\n' % (environmentmapscaleValue))
+        scene_file.write("\t</emitter>\n")
 
 def export_environmentLight(scene_file):
     print("image texture type: ")
@@ -1356,7 +1355,7 @@ def export_Mitsuba(filepath, scene , frameNumber):
         #export_integrator(scene_file,scene)
         export_camera(scene_file)
         
-        #export_EnviromentMap(scene_file)
+        export_EnviromentMap(scene_file)
         #export_environmentLight(scene_file)
         #print('Begin export lights:')
         export_point_lights(scene_file,scene)
