@@ -128,8 +128,13 @@ def export_camera(scene_file):
         scene_file.write('\t<sensor type="thinlens">\n')
         
         scene_file.write('<string name="focal_length" value="50mm"/>\n')
-        scene_file.write('<float name="aperture_radius" value="0.5"/>\n')
-        scene_file.write('<float name="focus_distance" value="%s"/>' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
+        
+        
+        if bpy.data.scenes['Scene'].dofLookAt is not None:
+            scene_file.write('<float name="focus_distance" value="%s"/>\n' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
+            scene_file.write('<float name="aperture_radius" value="%s"/>\n' % (bpy.data.scenes['Scene'].lensradius))
+        else:
+            scene_file.write('<float name="aperture_radius" value="0.0"/>\n')
 
         #Write out the sampler for the image.
         scene_file.write('\t\t<sampler type="independent">\n')
@@ -315,7 +320,7 @@ def export_EnviromentMap(scene_file):
         environmentmapscaleValue = bpy.data.scenes[0].environmentmapscale
         scene_file.write("\t<emitter type = \"envmap\" >\n")
         scene_file.write('<string name="filename" value="textures/%s"/>\n' % (environmentMapFileName))
-        scene_file.write('\t\t\t<float name=/"scale/" value=\"%s\"/>\n' % (environmentmapscaleValue))
+        scene_file.write('\t\t\t<float name="scale" value="%s"/>\n' % (environmentmapscaleValue))
         scene_file.write("\t</emitter>\n")
 
 def export_environmentLight(scene_file):
