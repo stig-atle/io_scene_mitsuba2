@@ -126,9 +126,10 @@ def export_camera(scene_file):
         at_point=at_point + from_point
 
         scene_file.write('\t<sensor type="thinlens">\n')
-        
-        scene_file.write('<string name="focal_length" value="50mm"/>\n')
-        
+
+        # https://blender.stackexchange.com/questions/14745/how-do-i-change-the-focal-length-of-a-camera-with-python
+        fov = bpy.data.cameras[0].angle * 180 / math.pi
+        scene_file.write('<float name="fov" value="%s"/>\n' % fov)
         
         if bpy.data.scenes['Scene'].dofLookAt is not None:
             scene_file.write('<float name="focus_distance" value="%s"/>\n' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
@@ -149,14 +150,6 @@ def export_camera(scene_file):
         scene_file.write('\t\t</transform>\n')
         scene_file.write('\t</sensor>\n')
 
-        #https://blender.stackexchange.com/questions/14745/how-do-i-change-the-focal-length-of-a-camera-with-python
-       # fov = bpy.data.cameras[0].angle * 180 / math.pi * bpy.data.scenes['Scene'].render.resolution_y / bpy.data.scenes['Scene'].render.resolution_x
-       # scene_file.write('Camera "perspective"\n')
-       # scene_file.write('"float fov" [%s]\n' % (fov))
-
-       # if bpy.data.scenes['Scene'].dofLookAt is not None:
-       #     scene_file.write('"float lensradius" [%s]\n' % (bpy.data.scenes['Scene'].lensradius))
-       #     scene_file.write('"float focaldistance" [%s]\n\n' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
     return ''
 
 def export_film(scene_file, frameNumber):
