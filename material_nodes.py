@@ -11,63 +11,63 @@ from nodeitems_utils import (
 
 
 #nodecategory begin
-#class MitsubaNodeCategory(NodeCategory):
-#    @classmethod
-#    def poll(cls, context):
-#        #Do not add the PBRT shader category if PBRT is not selected as renderer
-#        engine = context.scene.render.engine
-#        if engine != 'Mitsuba2_Renderer':
-#            return False
-#        else:
-#            b = False
-#            if context.space_data.tree_type == 'ShaderNodeTree': b = True
-#            return b
+class MitsubaNodeCategory(NodeCategory):
+    @classmethod
+    def poll(cls, context):
+        #Do not add the Mitsuba2 shader category if Mitsuba2 is not selected as renderer
+        engine = context.scene.render.engine
+        if engine != 'Mitsuba2_Renderer':
+            return False
+        else:
+            b = False
+            if context.space_data.tree_type == 'ShaderNodeTree': b = True
+            return b
 
 # all categories in a list
-#Mitsuba_node_categories = [
+Mitsuba_node_categories = [
     # identifier, label, items list
     #MitsubaNodeCategory("SOMENODES", "PBRT", items=[
- #   MitsubaNodeCategory("MSHADER", "Mitsuba", items=[
- #       NodeItem("MitsubaCustomNodeType"),
- #       ]),
- #   ]
+    MitsubaNodeCategory("SHADER", "Mitsuba", items=[
+        NodeItem("MitsubaBSDFDiffuse"),
+        ]),
+    ]
 
 #nodecategory end
 
 
 # Implementation of custom nodes from Python
 # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
-#class MitsubaTree(NodeTree):
-#    bl_idname = 'CustomTreeMitsuba'
-#    bl_label = 'Mitsuba Node Tree'
-#    bl_icon = 'NODETREE'
+class MitsubaTree(NodeTree):
+    bl_idname = 'CustomTreeMitsuba'
+    bl_label = 'Mitsuba Node Tree'
+    bl_icon = 'NODETREE'
 
 # Defines a poll function to enable filtering for various node tree types.
-#class MitsubaTreeNode :
-#    bl_icon = 'INFO'
-#    @classmethod
-#    def poll(cls, ntree):
-#        b = False
-#        # Make your node appear in different node trees by adding their bl_idname type here.
-#        if ntree.bl_idname == 'ShaderNodeTree': b = True
-#        return b
+class MitsubaTreeNode :
+    bl_icon = 'INFO'
+    @classmethod
+    def poll(cls, ntree):
+        b = False
+        # Make your node appear in different node trees by adding their bl_idname type here.
+        if ntree.bl_idname == 'ShaderNodeTree': b = True
+        return b
 
 # Derived from the Node base type.
-class MitsubaBSDF(Node, NodeTree):
+class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):
     '''A custom node'''
-    bl_idname = 'MitsubaCustomNodeType'
-    bl_label = 'Mitsuba2 BSDF'
+    bl_idname = 'MitsubaBSDFDiffuse'
+    bl_label = 'Mitsuba2 BSDF Diffuse'
     bl_icon = 'INFO'
 
     def uda(self, context):
         self.update()
     
-    @classmethod
-    def poll(cls, ntree):
-        b = False
-        if ntree.bl_idname == 'ShaderNodeTree':
-            b = True
-        return b
+    #@classmethod
+    #def poll(cls, ntree):
+        #b = False
+        #if ntree.bl_idname == 'ShaderNodeTree':
+            #b = True
+        #return b
 
     #def poll(cls, ntree):
     #    b = False
@@ -145,3 +145,10 @@ class MitsubaBSDF(Node, NodeTree):
                 if (skt.name == "kd"):
                     #updateViewportColor()
                     print("Output socket {} is linked".format(skt.name))
+
+
+def register():
+    nodeitems_utils.register_node_categories("MITSUBA2_CUSTOM_NODES", Mitsuba_node_categories)
+
+def unregister():
+    nodeitems_utils.unregister_node_categories("MITSUBA2_CUSTOM_NODES")

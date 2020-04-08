@@ -266,8 +266,8 @@ def followLinksOutput(node_in):
             print("followLinks going to " + node_links.to_node.name)
             followLinksOutput(node_links.to_node)
 
-def export_mitsuba_bsdf_material (scene_file, mat, materialName):
-    print('Currently exporting Mitsuba BSDF material')
+def export_mitsuba_bsdf_diffuse_material (scene_file, mat, materialName):
+    print('Currently exporting Mitsuba BSDF diffuse material')
     print (mat.name)
 
     for n in mat.inputs:
@@ -430,8 +430,8 @@ def export_material(scene_file, material):
         #print ('mat.node_tree.nodes[0].name:', material.node_tree.nodes[0].name)
         #print ('mat.node_tree.nodes[1].name:', material.node_tree.nodes[1].name)
 
-        if currentMaterial.name == 'Mitsuba2 BSDF':
-            export_mitsuba_bsdf_material(scene_file,currentMaterial, material.name)
+        if currentMaterial.name == 'Mitsuba2 BSDF Diffuse':
+            export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
 
     return''
 
