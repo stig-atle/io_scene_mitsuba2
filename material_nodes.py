@@ -145,30 +145,3 @@ class MitsubaBSDF(Node, NodeTree):
                 if (skt.name == "kd"):
                     #updateViewportColor()
                     print("Output socket {} is linked".format(skt.name))
-
-
-#def register():
-    #nodeitems_utils.register_node_categories("MitsubaCustomNodes", Mitsuba_node_categories)
-    #bpy.utils.register_class(PbrtRenderSettingsPanel)
-    # bpy.utils.register_class(PbrtMatte)
-    # bpy.utils.register_class(PbrtMirror)
-    # bpy.utils.register_class(PbrtGlass)
-    # bpy.utils.register_class(PbrtDisney)
-    # bpy.utils.register_class(PbrtMetal)
-    # bpy.utils.register_class(PbrtUber)
-    # bpy.utils.register_class(PbrtSubsurface)
-    # bpy.utils.register_class(PbrtSubstrate)
-    # bpy.utils.register_class(PbrtPlastic)
-
-#def unregister():
-#    nodeitems_utils.unregister_node_categories("MitsubaCustomNodes")
-    #bpy.utils.unregister_class(PbrtRenderSettingsPanel)
-    # bpy.utils.unregister_class(PbrtMatte)
-    # bpy.utils.unregister_class(PbrtMirror)
-    # bpy.utils.unregister_class(PbrtGlass)
-    # bpy.utils.unregister_class(PbrtDisney)
-    # bpy.utils.unregister_class(PbrtMetal)
-    # bpy.utils.unregister_class(PbrtUber)
-    # bpy.utils.unregister_class(PbrtSubsurface)
-    # bpy.utils.unregister_class(PbrtSubstrate)
-    # bpy.utils.unregister_class(PbrtPlastic)
