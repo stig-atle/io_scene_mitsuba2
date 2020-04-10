@@ -63,6 +63,8 @@ def export_point_lights(scene_file, scene):
                 print('\nExporting point light: ' + object.name)
                 #bpy.ops.object.select_all(action='DESELECT')
                 scene_file.write("\t<emitter type = \"point\" >\n")
+                #TODO: Fix so that lamp GUI shows up when mitsuba2 is selected as renderer.
+                scene_file.write("\t\t<spectrum name=\"intensity\" value=\"%s\"/>\n" %(la.energy))
                 scene_file.write("\t\t<transform name=\"to_world\">\n")
                 from_point=object.matrix_world.col[3]
                 scene_file.write("\t\t\t<translate value=\"%s, %s, %s\"/>\n" % (from_point.x, from_point.y, from_point.z))
@@ -478,6 +480,35 @@ def export_gometry_as_obj(scene_file, scene):
             scene_file.write('</shape>\n')
             
 
+def export_integrator(scene_file, scene):
+    
+    scene_file.write('<integrator type="%s">\n' % (scene.integrators))
+    if scene.integrators == 'path':
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+        
+        if scene.path_integrator_hide_emitters :
+            scene_file.write('<boolean name="hide_emitters" value="true"/>\n')
+        else:
+            scene_file.write('<boolean name="hide_emitters" value="false"/>\n')
+
+    if scene.integrators == 'volpathsimple':
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+
+    if scene.integrators == 'volpath':
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+
+    if scene.integrators == 'direct':
+        scene_file.write('<integer name="emitter_samples" value="%s"/>\n' %((bpy.data.scenes[0].direct_integrator_emitter_samples)))
+        scene_file.write('<integer name="bsdf_samples" value="%s"/>\n' %((bpy.data.scenes[0].direct_integrator_bsdf_samples)))
+
+    scene_file.write('</integrator>\n')
+
+    return ''
+
+
 def export_geometry(scene_file, scene):
     
     #TODO: Port to mitsuba's mesh format for xml.
@@ -559,6 +590,7 @@ def export_Mitsuba(filepath, scene , frameNumber):
     with open(out, 'w') as scene_file:
         createDefaultExportDirectories(scene_file,scene)
         scene_begin(scene_file)
+        export_integrator(scene_file, scene)
         export_camera(scene_file)
         export_EnviromentMap(scene_file)
         export_point_lights(scene_file,scene)

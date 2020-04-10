@@ -77,6 +77,38 @@ class MitsubaRenderSettingsPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(scene, "lensradius")
 
+        layout.label(text="Integrator settings:")
+        row = layout.row()
+
+        row.prop(scene,"integrators")
+
+        if scene.integrators == 'path':
+            row = layout.row()
+            row.prop(scene,"path_integrator_hide_emitters")
+            row = layout.row()
+            row.prop(scene,"path_integrator_max_depth")
+            row.prop(scene,"path_integrator_rr_depth")
+        
+        if scene.integrators == 'volpathsimple':
+            row = layout.row()
+            row.prop(scene,"path_integrator_max_depth")
+            row.prop(scene,"path_integrator_rr_depth")
+
+        if scene.integrators == 'volpath':
+            row = layout.row()
+            row.prop(scene,"path_integrator_max_depth")
+            row.prop(scene,"path_integrator_rr_depth")
+
+        if scene.integrators == 'direct':
+            row = layout.row()
+            row.prop(scene,"path_integrator_hide_emitters")
+            row = layout.row()
+            row.prop(scene,"direct_integrator_emitter_samples")
+            row = layout.row()
+            row.prop(scene,"direct_integrator_bsdf_samples")
+            
+            
+
         #layout.label(text="Light strategy:")
         #row = layout.row()
         #row.prop(scene,"lightsamplestrategy")
@@ -116,3 +148,15 @@ def register():
     bpy.types.Scene.lensradius = bpy.props.FloatProperty(name = "Lens radius", description = "Lens radius", default = 0, min = 0.001, max = 9999)
     bpy.types.Scene.batch_frame_start = bpy.props.IntProperty(name = "Frame start", description = "Frame start", default = 1, min = 1, max = 9999999)
     bpy.types.Scene.batch_frame_end = bpy.props.IntProperty(name = "Frame end", description = "Frame end", default = 1, min = 1, max = 9999999)
+
+    integrators = [("direct", "direct", "", 1),("path", "path", "", 2),("volpath", "volpath", "", 3),("volpathsimple", "volpathsimple", "", 4)]
+    bpy.types.Scene.integrators = bpy.props.EnumProperty(name = "Name", items=integrators , default="path")
+
+    #path integrator settings:
+    bpy.types.Scene.path_integrator_max_depth = bpy.props.IntProperty(name = "Max depth", description = "Specifies the longest path depth in the generated output image (where -1 corresponds to infty). A value of 1 will only render directly visible light sources. 2 will lead to single-bounce (direct-only) illumination, and so on.", default = -1, min = -1, max = 9999)
+    bpy.types.Scene.path_integrator_rr_depth = bpy.props.IntProperty(name = "Rr depth", description = "Specifies the minimum path depth, after which the implementation will start to use the *russian roulette* path termination criterion.", default = 5, min = 0, max = 9999)
+    bpy.types.Scene.path_integrator_hide_emitters = bpy.props.BoolProperty(name="Hide emitters", description="Hide directly visible emitters.", default = False)
+
+    bpy.types.Scene.direct_integrator_emitter_samples = bpy.props.IntProperty(name = "Emitter samples", description = "specifies the number of samples that should be generated using the direct illumination strategies implemented by the scene's emitters. (Default: set to the value of 'shading samples')", default = 1, min = 1, max = 9999)
+    bpy.types.Scene.direct_integrator_bsdf_samples = bpy.props.IntProperty(name = "BSDF samples", description = "specifies the number of samples that should be generated using the BSDF sampling strategies implemented by the scene's surfaces.", default = 1, min = 1, max = 9999)
+    
