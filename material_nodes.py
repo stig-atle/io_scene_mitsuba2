@@ -29,6 +29,7 @@ Mitsuba_node_categories = [
     #MitsubaNodeCategory("SOMENODES", "PBRT", items=[
     MitsubaNodeCategory("SHADER", "Mitsuba", items=[
         NodeItem("MitsubaBSDFDiffuse"),
+        NodeItem("MitsubaBSDFPlastic"),
         ]),
     ]
 
@@ -51,6 +52,74 @@ class MitsubaTreeNode :
         # Make your node appear in different node trees by adding their bl_idname type here.
         if ntree.bl_idname == 'ShaderNodeTree': b = True
         return b
+
+
+# Derived from the Node base type.
+class MitsubaBSDF_Plastic(Node, MitsubaTreeNode):
+    '''A custom node'''
+    bl_idname = 'MitsubaBSDFPlastic'
+    bl_label = 'Mitsuba2 BSDF Plastic'
+    bl_icon = 'INFO'
+
+    def uda(self, context):
+        self.update()
+    
+    def common_update(self, context, origin):
+        print("common_update called...")
+
+    def updateViewportColor(self,context):
+        mat = bpy.context.active_object.active_material
+        if mat is not None:
+            bpy.data.materials[mat.name].diffuse_color=self.inputs["diffuse_reflectance"].default_value
+        
+    def updateViewportColorNew(self):
+        print("Trying to update color on material..")
+        mat = bpy.context.active_object.active_material
+        if mat is not None:
+            bpy.data.materials[mat.name].diffuse_color=self.inputs[0].default_value
+            #node_tree.nodes["Mitsuba BSDF"].inputs[0].default_value
+
+    specular_sampling_weight : bpy.props.FloatProperty(default=1.0, min=0.0, max=1.0)
+    fdr_int: bpy.props.FloatProperty(default=1.9, min=0.0, max=99.0)
+    fdr_ext: bpy.props.FloatProperty(default=1.9, min=0.0, max=99.0)
+    #diffuse_reflectance : bpy.props.FloatVectorProperty(name="diffuse_reflectance", description="diffuse_reflectance",default=(0.8, 0.8, 0.8, 1.0), min=0, max=1, subtype='COLOR', size=4,update=updateViewportColor)
+
+    def init(self, context):
+        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Plastic")
+        diffuse_reflectance = self.inputs.new('NodeSocketColor', "Diffuse reflectance")
+        diffuse_reflectance.default_value=(0.8,0.8,0.8,1.0)
+
+        specular_reflectance = self.inputs.new('NodeSocketColor', "Specular reflectance")
+        specular_reflectance.default_value=(1.0,1.0,1.0,1.0)
+
+
+    def draw(self, context):
+        print("draw called")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "specular_sampling_weight",text = 'specular sampling weight')
+        layout.prop(self, "fdr_int",text = 'Internal IOR')
+        layout.prop(self, "fdr_ext",text = 'External IOR')
+        
+        #layout.prop(self, "diffuse_reflectance",text = 'diffuse_reflectance')
+        #layout.prop(self,"kd_tex" , text = 'kdTexture')
+        
+    def draw_label(self):
+        return "Mitsuba2 BSDF Plastic"
+
+    def socket_value_update(self,context):
+        print("Socket value changed..")
+
+    def update(self):
+        print("update(self) is called")
+        
+
+        for skt in self.outputs:
+            if skt.links:
+                #self.diffuse_color = self.diffuse_reflectance
+                if (skt.name == "diffuse_reflectance"):
+                    #updateViewportColor()
+                    print("Output socket {} is linked".format(skt.name))
 
 # Derived from the Node base type.
 class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):

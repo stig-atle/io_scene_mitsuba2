@@ -268,6 +268,16 @@ def followLinksOutput(node_in):
             print("followLinks going to " + node_links.to_node.name)
             followLinksOutput(node_links.to_node)
 
+def export_mitsuba_bsdf_platic_material (scene_file, mat, materialName):
+    #TODO: add export of plastic material here..
+    scene_file.write('<bsdf type="plastic" id="%s">\n' % materialName)
+    scene_file.write('<rgb name="diffuse_reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    scene_file.write('<rgb name="specular_reflectance"  value="%s, %s, %s"/>\n' %(mat.inputs[1].default_value[0], mat.inputs[1].default_value[1], mat.inputs[1].default_value[2]))
+    scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
+    scene_file.write('<float name="ext_ior" value="%s"/>\n' %(mat.fdr_ext))
+    scene_file.write('</bsdf>\n')
+    return ''
+
 def export_mitsuba_bsdf_diffuse_material (scene_file, mat, materialName):
     print('Currently exporting Mitsuba BSDF diffuse material')
     print (mat.name)
@@ -434,7 +444,8 @@ def export_material(scene_file, material):
 
         if currentMaterial.name == 'Mitsuba2 BSDF Diffuse':
             export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
-
+        if currentMaterial.name == 'Mitsuba2 BSDF Plastic':
+            export_mitsuba_bsdf_platic_material(scene_file,currentMaterial, material.name)
     return''
 
     # matrix to string
@@ -472,7 +483,7 @@ def export_gometry_as_obj(scene_file, scene):
                 print(objFolderPath)
                 os.makedirs(objFolderPath)
 
-            bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True, axis_forward='Y', axis_up='Z')
+            bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True, axis_forward='Y', axis_up='Z', use_materials=False)
             
             scene_file.write('<shape type="obj">\n')
             scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
