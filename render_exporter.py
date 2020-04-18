@@ -268,6 +268,28 @@ def followLinksOutput(node_in):
             print("followLinks going to " + node_links.to_node.name)
             followLinksOutput(node_links.to_node)
 
+def export_mitsuba_blackbody_material (scene_file, mat, materialName):
+    #scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
+    scene_file.write('<emitter type="area">\n')
+    scene_file.write('<spectrum type="blackbody" name="radiance">\n')
+    scene_file.write('<float name="temperature" value="%s"/>\n' %(mat.temperature))
+    scene_file.write('</spectrum>\n')
+    scene_file.write('</emitter>\n')
+    return ''
+
+
+def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
+    scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
+    scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
+    scene_file.write('<float name="ext_ior" value="%s"/>\n' %(mat.fdr_ext))
+    
+    #TODO: Add 'preset' string based values.
+    #scene_file.write('<string name="int_ior" value="water"/>\n')
+    #scene_file.write('<string name="ext_ior" value="air"/>\n')
+    
+    scene_file.write('</bsdf>\n')
+    return ''
+
 def export_mitsuba_bsdf_platic_material (scene_file, mat, materialName):
     #TODO: add export of plastic material here..
     scene_file.write('<bsdf type="plastic" id="%s">\n' % materialName)
@@ -446,6 +468,10 @@ def export_material(scene_file, material):
             export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
         if currentMaterial.name == 'Mitsuba2 BSDF Plastic':
             export_mitsuba_bsdf_platic_material(scene_file,currentMaterial, material.name)
+        if currentMaterial.name == 'Mitsuba2 BSDF Dielectric':
+            export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, material.name)
+        if currentMaterial.name == 'Mitsuba2 BlackBody':
+            export_mitsuba_blackbody_material(scene_file,currentMaterial,material.name)
     return''
 
     # matrix to string
@@ -468,9 +494,9 @@ def export_gometry_as_obj(scene_file, scene):
         print("exporting:")
         print(object.name)
 
-        for i in range(len(object.material_slots)):
-            material = object.material_slots[i].material
-            export_material(scene_file, material)
+        #for i in range(len(object.material_slots)):
+            #material = object.material_slots[i].material
+            #export_material(scene_file, material)
 
         if object is not None and object.type != 'CAMERA' and object.type == 'MESH':
             bpy.ops.object.select_all(action="DESELECT")
@@ -487,7 +513,8 @@ def export_gometry_as_obj(scene_file, scene):
             
             scene_file.write('<shape type="obj">\n')
             scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
-            scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
+            export_material(scene_file, object.material_slots[0].material)
+            #scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
             scene_file.write('</shape>\n')
             
 
