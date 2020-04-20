@@ -120,23 +120,31 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     specular_sampling_weight : bpy.props.FloatProperty(default=1.0, min=0.0, max=1.0)
     fdr_int: bpy.props.FloatProperty(default=1.504, min=0.0, max=9999.0)
     fdr_ext: bpy.props.FloatProperty(default=1.0, min=0.0, max=9999.0)
+    presets = [("vacuum", "vacuum", "", 1),("acetone", "acetone", "", 2),("bromine", "bromine", "", 3),("bk7", "bk7", "1.5046", 4),("helium", "helium", "", 5),("ethanol", "ethanol", "", 6),("water ice", "water ice", "", 7),("sodium chloride", "sodium chloride", "", 8),("hydrogen", "hydrogen", "", 9),("carbon tetrachloride", "carbon tetrachloride", "", 10),("fused quartz", "fused quartz", "", 11),("amber", "amber", "", 12),("air", "air", "", 13),("glycerol", "glycerol", "", 14),("pyrex", "pyrex", "", 15),("pet", "pet", "", 16),("carbon dioxide", "carbon dioxide", "", 17),("benzene", "benzene", "", 18),("acrylic glass", "acrylic glass", "", 19),("diamond", "diamond", "", 20),("water", "water", "", 21),("silicone oil", "silicone oil", "", 22),("polypropylene", "polypropylene", "", 23)]
+    use_internal_ior = bpy.props.BoolProperty(name="Use internal IOR preset", description="Use internal IOR preset.", default = True)
+    ior_internal_preset = bpy.props.EnumProperty(name = "Internal preset", items=presets , default="bk7")
+    use_external_ior = bpy.props.BoolProperty(name="Use external IOR preset", description="Use external IOR preset.", default = True)
+    ior_external_preset = bpy.props.EnumProperty(name = "External preset", items=presets , default="vacuum")
 
     def init(self, context):
         self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Dielectric")
-        #diffuse_reflectance = self.inputs.new('NodeSocketColor', "Diffuse reflectance")
-        #diffuse_reflectance.default_value=(0.8,0.8,0.8,1.0)
-
-        #specular_reflectance = self.inputs.new('NodeSocketColor', "Specular reflectance")
-        #specular_reflectance.default_value=(1.0,1.0,1.0,1.0)
-
 
     def draw(self, context):
         print("draw called")
 
     def draw_buttons(self, context, layout):
-        #layout.prop(self, "specular_sampling_weight",text = 'specular sampling weight')
-        layout.prop(self, "fdr_int",text = 'Internal IOR')
-        layout.prop(self, "fdr_ext",text = 'External IOR')
+
+        layout.prop(self, "use_internal_ior",text = 'Use Internal IOR preset')
+        if self.use_internal_ior == False:
+            layout.prop(self, "fdr_int",text = 'Internal IOR')
+        else:
+            layout.prop(self, "ior_internal_preset",text = 'IOR internal preset')
+        
+        layout.prop(self, "use_external_ior",text = 'Use external IOR preset')
+        if self.use_external_ior == False:
+            layout.prop(self, "fdr_ext",text = 'External IOR')
+        else:
+            layout.prop(self, "ior_external_preset",text = 'IOR external preset')
         
     def draw_label(self):
         return "Mitsuba2 BSDF Dielectric"
