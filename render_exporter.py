@@ -442,14 +442,7 @@ def export_material(scene_file, material):
     #print ('Fetched material in slot 0 named: ',material.name)
     if material and material.use_nodes: #if it is using nodes
         print('Exporting materal named: ', material.name)
-
-        # this piece of code needs work.
-        # we need to restructure how we do this. We should get the 'material output' node (by name for example)
-        # material.node_tree.nodes['Material output'].name
-
-        #if material.node_tree.nodes['Material output'] is not None:
-            #print("We found the output node!!")
-
+        
         #Find the surface output node, then export the connected material
         for node in material.node_tree.nodes:
             if node.name == 'Material Output':
@@ -457,23 +450,14 @@ def export_material(scene_file, material):
                     for node_links in input.links:
                         print("going to " + node_links.from_node.name)
                         currentMaterial =  node_links.from_node
-                        
-                        # We should traverse the node instead of always looping through the material nodes to the find 'input 0'.
-                        # this also affects the texture export and so on. all of that needs to be fixed.
-                        # Enable the piece below to start doing so.
-                        #material = node_links.from_node
-
-        #print ('mat.node_tree.nodes[0].name:', material.node_tree.nodes[0].name)
-        #print ('mat.node_tree.nodes[1].name:', material.node_tree.nodes[1].name)
-
-        if currentMaterial.name == 'Mitsuba2 BSDF Diffuse':
-            export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
-        if currentMaterial.name == 'Mitsuba2 BSDF Plastic':
-            export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, material.name)
-        if currentMaterial.name == 'Mitsuba2 BSDF Dielectric':
-            export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, material.name)
-        if currentMaterial.name == 'Mitsuba2 BlackBody':
-            export_mitsuba_blackbody_material(scene_file,currentMaterial,material.name)
+                        if currentMaterial.name == 'Mitsuba2 BSDF Diffuse':
+                            export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
+                        if currentMaterial.name == 'Mitsuba2 BSDF Plastic':
+                            export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, material.name)
+                        if currentMaterial.name == 'Mitsuba2 BSDF Dielectric':
+                            export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, material.name)
+                        if currentMaterial.name == 'Mitsuba2 BlackBody':
+                            export_mitsuba_blackbody_material(scene_file,currentMaterial,material.name)
     return''
 
     # matrix to string
