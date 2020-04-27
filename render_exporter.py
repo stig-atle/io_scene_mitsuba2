@@ -279,7 +279,12 @@ def export_mitsuba_blackbody_material (scene_file, mat, materialName):
 
 
 def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
-    scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
+
+    if (mat.roughness == False):
+        scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
+    else:
+        scene_file.write('<bsdf type="roughdielectric" id="%s">\n' % materialName)
+    
     if (mat.use_internal_ior == False):
         scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
     else:

@@ -117,6 +117,7 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
         if mat is not None:
             bpy.data.materials[mat.name].diffuse_color=self.inputs[0].default_value
 
+    roughness = bpy.props.BoolProperty(name="Use roughness", description="Use version with roughness.", default = False)
     specular_sampling_weight : bpy.props.FloatProperty(default=1.0, min=0.0, max=1.0)
     fdr_int: bpy.props.FloatProperty(default=1.504, min=0.0, max=9999.0)
     fdr_ext: bpy.props.FloatProperty(default=1.0, min=0.0, max=9999.0)
@@ -134,6 +135,7 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
 
     def draw_buttons(self, context, layout):
 
+        layout.prop(self, "roughness",text = 'Use roughness.')
         layout.prop(self, "use_internal_ior",text = 'Use Internal IOR preset')
         if self.use_internal_ior == False:
             layout.prop(self, "fdr_int",text = 'Internal IOR')
