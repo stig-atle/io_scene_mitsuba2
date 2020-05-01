@@ -268,8 +268,19 @@ def followLinksOutput(node_in):
             print("followLinks going to " + node_links.to_node.name)
             followLinksOutput(node_links.to_node)
 
+def export_mitsuba_conductor_material (scene_file, mat, materialName):
+    if mat.roughness:
+        scene_file.write('<bsdf type="roughconductor" id="%s">\n' % materialName)
+        scene_file.write('<float name="alpha_u" value="%s"/>\n' % mat.alpha_u)
+        scene_file.write('<float name="alpha_v" value="%s"/>\n' % mat.alpha_v)
+    else:
+        scene_file.write('<bsdf type="conductor" id="%s">\n' % materialName)
+
+    scene_file.write('<string name="material" value="%s"/>\n' %(mat.named_preset))
+    scene_file.write('</bsdf>\n')
+    return ''
+
 def export_mitsuba_blackbody_material (scene_file, mat, materialName):
-    #scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
     scene_file.write('<emitter type="area">\n')
     scene_file.write('<spectrum type="blackbody" name="radiance">\n')
     scene_file.write('<float name="temperature" value="%s"/>\n' %(mat.temperature))
@@ -463,6 +474,8 @@ def export_material(scene_file, material):
                             export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, material.name)
                         if currentMaterial.name == 'Mitsuba2 BlackBody':
                             export_mitsuba_blackbody_material(scene_file,currentMaterial,material.name)
+                        if currentMaterial.name == 'Mitsuba2 BSDF Conductor':
+                            export_mitsuba_conductor_material(scene_file,currentMaterial,material.name)
     return''
 
     # matrix to string

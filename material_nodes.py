@@ -32,6 +32,7 @@ Mitsuba_node_categories = [
         NodeItem("MitsubaBSDFPlastic"),
         NodeItem("MitsubaBSDFDielectric"),
         NodeItem("MitsubaBlackBody"),
+        NodeItem("MitsubaBSDFConductor"),
         ]),
     ]
 
@@ -87,6 +88,59 @@ class MitsubaBlackBody(Node, MitsubaTreeNode):
         
     def draw_label(self):
         return "Mitsuba2 BlackBody"
+
+    def socket_value_update(self,context):
+        print("Socket value changed..")
+
+    def update(self):
+        print("update(self) is called")
+
+class MitsubaBSDF_Conductor(Node, MitsubaTreeNode):
+    '''A custom node'''
+    bl_idname = 'MitsubaBSDFConductor'
+    bl_label = 'Mitsuba2 BSDF Conductor'
+    bl_icon = 'INFO'
+
+    def uda(self, context):
+        self.update()
+    
+    def common_update(self, context, origin):
+        print("common_update called...")
+
+    def updateViewportColor(self,context):
+        mat = bpy.context.active_object.active_material
+        if mat is not None:
+            bpy.data.materials[mat.name].diffuse_color=self.inputs["diffuse_reflectance"].default_value
+        
+    def updateViewportColorNew(self):
+        print("Trying to update color on material..")
+        mat = bpy.context.active_object.active_material
+        if mat is not None:
+            bpy.data.materials[mat.name].diffuse_color=self.inputs[0].default_value
+
+    presets = [("a-C", "a-C", "", 1),("Na_palik", "Na_palik", "", 2),("Ag", "Ag", "", 3),("Nb", "Nb", "", 4),("Al", "Al", "", 5),("AlAs", "AlAs", "", 6),("Rh", "Rh", "", 7),("AlSb", "AlSb", "", 8),("Se", "Se", "", 9),("Au", "Au", "", 10),("SiC", "SiC", "", 11),("Be", "Be", "", 12),("SnTe", "SnTe", "", 13),("Cr", "Cr", "", 14),("Ta", "Ta", "", 15),("CsI", "CsI", "", 16),("Te", "Te", "", 17),("Cu", "Cu", "", 18),("ThF4", "ThF4", "", 19),("Cu2O", "Cu2O", "", 20),("TiC", "TiC", "", 21),("CuO", "CuO", "", 22),("TiN", "TiN", "", 23),("d-C", "d-C", "", 24),("TiO2", "TiO2", "", 25),("Hg", "Hg", "", 26),("VC", "VC", "", 27),("HgTe", "HgTe", "", 28),("V_palik", "V_palik", "", 29),("Ir", "Ir", "", 30),("VN", "VN", "", 31),("K", "K", "", 32),("W", "W", "", 33),("Li", "Li", "", 34),("MgO", "MgO", "", 35),("Mo", "Mo", "", 36)]
+    named_preset : bpy.props.EnumProperty(name = "Preset", items=presets , default="Al")
+    
+    roughness : bpy.props.BoolProperty(name="Use roughness", description="Use version with roughness.", default = False)
+    alpha_u: bpy.props.FloatProperty(default=0.05, min=0.0, max=9999.0)
+    alpha_v: bpy.props.FloatProperty(default=0.3, min=0.0, max=9999.0)
+
+    def init(self, context):
+        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Conductor")
+
+    def draw(self, context):
+        print("draw called")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "roughness",text = 'Use roughness.')
+
+        layout.prop(self, "named_preset",text = 'Named preset')
+        if self.roughness == True:
+            layout.prop(self, "alpha_u",text = 'alpha_u')
+            layout.prop(self, "alpha_v",text = 'alpha_v')
+        
+    def draw_label(self):
+        return "Mitsuba2 BSDF Conductor"
 
     def socket_value_update(self,context):
         print("Socket value changed..")
