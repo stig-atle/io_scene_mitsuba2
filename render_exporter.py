@@ -18,6 +18,7 @@ class MitsubaRenderEngine(bpy.types.RenderEngine):
     bl_use_texture_preview = True
     bl_use_texture = True
     
+
     def render(self, scene):
         self.report({'ERROR'}, "Use export function in Mitsuba2 panel.")
         
@@ -38,7 +39,7 @@ for member in dir(properties_material):
         pass
 
 bpy.utils.register_class(MitsubaRenderEngine)
-
+exportedMaterials = list()
 #Camera code:
 #https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix
 def measure(first, second):
@@ -281,7 +282,7 @@ def export_mitsuba_conductor_material (scene_file, mat, materialName):
     return ''
 
 def export_mitsuba_blackbody_material (scene_file, mat, materialName):
-    scene_file.write('<emitter type="area">\n')
+    scene_file.write('<emitter type="area" id="%s">\n')
     scene_file.write('<spectrum type="blackbody" name="radiance">\n')
     scene_file.write('<float name="temperature" value="%s"/>\n' %(mat.temperature))
     scene_file.write('</spectrum>\n')
@@ -439,8 +440,16 @@ def export_material(scene_file, material):
         print("no material on object")
         return ''
 
+    #exit early if material is already exported.
+    #if material.name in exportedMaterials :
+    #if name in exportedMaterials[material.name].values :
+    #for materialName in exportedMaterials:
+    #    if(materialName == material.name) : 
+    #        print('Material %s already defined, skipping.' % material.name)
+    #        return None
+    #    else:
     #mat = #object.data.materials[slotIndex]
-    print ('Exporting material named: ',material.name)
+    print ('Exporting material named: ', material.name)
     #nodes = mat.node_tree.nodes
     global hastexture
     hastexture = False
@@ -498,9 +507,11 @@ def export_gometry_as_obj(scene_file, scene):
         print("exporting:")
         print(object.name)
 
-        #for i in range(len(object.material_slots)):
-            #material = object.material_slots[i].material
-            #export_material(scene_file, material)
+        for i in range(len(object.material_slots)):
+            material = object.material_slots[i].material
+            if material.name not in exportedMaterials:
+                export_material(scene_file, material)
+                exportedMaterials.append(material.name)
 
         if object is not None and object.type != 'CAMERA' and object.type == 'MESH':
             bpy.ops.object.select_all(action="DESELECT")
@@ -517,9 +528,11 @@ def export_gometry_as_obj(scene_file, scene):
             
             scene_file.write('<shape type="obj">\n')
             scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
-            export_material(scene_file, object.material_slots[0].material)
+            scene_file.write('<ref id="%s"/>\n' % object.material_slots[i].material.name)
+            #export_material(scene_file, object.material_slots[0].material)
             #scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
             scene_file.write('</shape>\n')
+    return ''
             
 
 def export_integrator(scene_file, scene):
@@ -550,78 +563,6 @@ def export_integrator(scene_file, scene):
 
     return ''
 
-
-def export_geometry(scene_file, scene):
-    
-    #TODO: Port to mitsuba's mesh format for xml.
-
-    # We now export the mesh as pbrt's triangle meshes.
-    # Development documentation :
-    # https://docs.blender.org/api/current/bpy.types.MeshLoopTriangle.html
-    # https://wiki.blender.org/wiki/Reference/Release_Notes/2.80/Python_API/Mesh_API
-
-    for object in scene.objects:
-        print("exporting:")
-        print(object.name)
-
-        if object is not None and object.type != 'CAMERA' and object.type == 'MESH':
-            bpy.ops.object.mode_set(mode='OBJECT')
-            print('exporting object: ' + object.name)
-            bpy.context.view_layer.update()
-            object.data.update()
-            mesh = object.data
-
-            if not mesh.loop_triangles and mesh.polygons:
-                mesh.calc_loop_triangles()
-
-            for i in range(len(object.material_slots)):
-                scene_file.write("AttributeBegin\n")
-                scene_file.write( "Transform [" + matrixtostr( object.matrix_world.transposed() ) + "]\n" )
-                material = object.material_slots[i].material
-                export_material(scene_file, material)
-                
-                scene_file.write( "Shape \"trianglemesh\"\n")
-
-                # TODO: 
-                # The current way we loop through triangles is not optimized.
-                # This should be fixed by looping through once, then collect all
-                # faces\verts etc that belongs to slot X, then export each collection.
-                scene_file.write( '\"point P\" [\n' )
-                for tri in mesh.loop_triangles:
-                    if tri.material_index == i:
-                        for vert_index in tri.vertices:
-                            scene_file.write("%s %s %s\n" % (mesh.vertices[vert_index].co.x, mesh.vertices[vert_index].co.y, mesh.vertices[vert_index].co.z))
-                scene_file.write( "]\n" )
-                
-                mesh.calc_normals_split()
-                scene_file.write( "\"normal N\" [\n" )
-                for tri in mesh.loop_triangles:
-                    if tri.material_index == i:
-                        for vert_index in tri.split_normals:
-                            scene_file.write("%s %s %s\n" % (vert_index[0],vert_index[1],vert_index[2]))
-                scene_file.write( "]\n" )
-                
-                scene_file.write( "\"float st\" [\n" )
-                for uv_layer in mesh.uv_layers:
-                    for tri in mesh.loop_triangles:
-                        if tri.material_index == i:
-                            for loop_index in tri.loops:
-                                scene_file.write("%s %s \n" % (uv_layer.data[loop_index].uv[0], uv_layer.data[loop_index].uv[1]))
-                scene_file.write( "]\n" )
-
-                scene_file.write( "\"integer indices\" [\n" )
-                faceIndex = 0
-                for tri in mesh.loop_triangles:
-                    if tri.material_index == i:
-                        for vert_index in tri.vertices:
-                            scene_file.write("%s " % (faceIndex))
-                            faceIndex +=1
-                scene_file.write("\n")
-                scene_file.write( "]\n" )
-                scene_file.write("AttributeEnd\n\n")
-
-    return ''
-
 def export_Mitsuba(filepath, scene , frameNumber):
     out = os.path.join(filepath, "test" + frameNumber +".xml")
     if not os.path.exists(filepath):
@@ -630,13 +571,13 @@ def export_Mitsuba(filepath, scene , frameNumber):
         os.makedirs(filepath)
 
     with open(out, 'w') as scene_file:
+        exportedMaterials.clear()
         createDefaultExportDirectories(scene_file,scene)
         scene_begin(scene_file)
         export_integrator(scene_file, scene)
         export_camera(scene_file)
         export_EnviromentMap(scene_file)
         export_point_lights(scene_file,scene)
-        #export_geometry(scene_file,scene)
         export_gometry_as_obj(scene_file,scene)
         scene_end(scene_file)
         scene_file.close()
