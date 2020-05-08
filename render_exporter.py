@@ -282,7 +282,7 @@ def export_mitsuba_conductor_material (scene_file, mat, materialName):
     return ''
 
 def export_mitsuba_blackbody_material (scene_file, mat, materialName):
-    scene_file.write('<emitter type="area" id="%s">\n')
+    scene_file.write('<emitter type="area" id="%s">\n' % materialName)
     scene_file.write('<spectrum type="blackbody" name="radiance">\n')
     scene_file.write('<float name="temperature" value="%s"/>\n' %(mat.temperature))
     scene_file.write('</spectrum>\n')
