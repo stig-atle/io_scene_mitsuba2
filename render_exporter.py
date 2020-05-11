@@ -289,6 +289,17 @@ def export_mitsuba_blackbody_material (scene_file, mat, materialName):
     scene_file.write('</emitter>\n')
     return ''
 
+def export_medium(scene_file, inputNode):
+    if inputNode is not None:
+        for node_links in inputNode.links:
+            if node_links.from_node.bl_idname == "MitsubaBSDFMedium":
+                myNode = node_links.from_node
+                scene_file.write('<medium type="homogeneous" name="interior">\n')
+                scene_file.write('<rgb name="sigma_t" value="%s, %s, %s"/>\n' %(myNode.sigma_t[0], myNode.sigma_t[1], myNode.sigma_t[2]))
+                scene_file.write('<rgb name="albedo" value="%s, %s, %s"/>\n' %(myNode.albedo[0], myNode.albedo[1], myNode.albedo[2]))
+                scene_file.write('<float name="density" value="%s"/>\n' %(myNode.density))
+                scene_file.write('</medium>\n')
+    return ''
 
 def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
 
@@ -296,6 +307,7 @@ def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
         scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
     else:
         scene_file.write('<bsdf type="roughdielectric" id="%s">\n' % materialName)
+        scene_file.write('<float name="alpha" value="%s"/>\n' %(mat.alpha))
     
     if (mat.use_internal_ior == False):
         scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
@@ -308,6 +320,7 @@ def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
         scene_file.write('<string name="ext_ior" value="%s"/>\n' %(mat.ior_external_preset))
 
     scene_file.write('</bsdf>\n')
+    
     return ''
 
 def export_mitsuba_bsdf_plastic_material (scene_file, mat, materialName):
@@ -426,45 +439,32 @@ def exportTextureInSlot(scene_file,index,mat,slotname):
 #        foundTex = True
     return ''
 
-# Here we should check what material type is being exported.
-def export_material(scene_file, material):
-    # https://blender.stackexchange.com/questions/51782/get-material-and-color-of-material-on-a-face-of-an-object-in-python
-    # https://blender.stackexchange.com/questions/36587/how-to-define-customized-property-in-material
-
-    #context = bpy.context
-    #obj = context.object
-    #print("Material slots:")
-    #print(len(object.material_slots))
-    #if len(object.material_slots) == 0:
+def exportObject_medium(scene_file, material):
     if material is None:
         print("no material on object")
         return ''
 
-    #exit early if material is already exported.
-    #if material.name in exportedMaterials :
-    #if name in exportedMaterials[material.name].values :
-    #for materialName in exportedMaterials:
-    #    if(materialName == material.name) : 
-    #        print('Material %s already defined, skipping.' % material.name)
-    #        return None
-    #    else:
-    #mat = #object.data.materials[slotIndex]
     print ('Exporting material named: ', material.name)
-    #nodes = mat.node_tree.nodes
+
+    if material and material.use_nodes:
+        print('Exporting materal named: ', material.name)
+        
+        #Find the surface output node, then export the connected medium.
+        for node in material.node_tree.nodes:
+            if node.name == 'Material Output':
+                export_medium(scene_file,node.inputs[1])
+    return ''
+
+def export_material(scene_file, material):
+    if material is None:
+        print("no material on object")
+        return ''
+
+    print ('Exporting material named: ', material.name)
     global hastexture
     hastexture = False
     currentMaterial = None
-    #textureName = ""
-    # check if this code can be used so get the socket the image is plugged into:
-    # https://blender.stackexchange.com/questions/77365/getting-the-image-of-a-texture-node-that-feeds-into-a-node-group
 
-    #   Begin new texture code
-
-
-    #Later we should loop through all 'slots' to write out all materials applied.
-
-    #mat = object.material_slots[slotIndex].material #Get the material from the material slot you want
-    #print ('Fetched material in slot 0 named: ',material.name)
     if material and material.use_nodes: #if it is using nodes
         print('Exporting materal named: ', material.name)
         
@@ -531,6 +531,7 @@ def export_gometry_as_obj(scene_file, scene):
             scene_file.write('<ref id="%s"/>\n' % object.material_slots[i].material.name)
             #export_material(scene_file, object.material_slots[0].material)
             #scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
+            exportObject_medium(scene_file, object.material_slots[0].material)
             scene_file.write('</shape>\n')
     return ''
             

@@ -33,6 +33,7 @@ Mitsuba_node_categories = [
         NodeItem("MitsubaBSDFDielectric"),
         NodeItem("MitsubaBlackBody"),
         NodeItem("MitsubaBSDFConductor"),
+        NodeItem("MitsubaBSDFMedium"),
         ]),
     ]
 
@@ -148,6 +149,45 @@ class MitsubaBSDF_Conductor(Node, MitsubaTreeNode):
     def update(self):
         print("update(self) is called")
 
+class MitsubaBSDF_Medium(Node, MitsubaTreeNode):
+    '''A custom node'''
+    bl_idname = 'MitsubaBSDFMedium'
+    bl_label = 'Mitsuba2 BSDF Medium'
+    bl_icon = 'INFO'
+
+    def update_value(self, context):
+        self.update ()
+
+    mediumType = [("homogeneous","homogeneous","",1)]
+    Type : bpy.props.EnumProperty(name = "Type", items=mediumType , default="homogeneous")
+    sigma_t : bpy.props.FloatVectorProperty(name="sigma_t", description="sigma_t",default=(0.8, 0.8, 0.8, 1.0), min=0, max=1, subtype='COLOR', size=4)
+    albedo : bpy.props.FloatVectorProperty(name="albedo", description="albedo",default=(0.8, 0.8, 0.8, 1.0), min=0, max=1, subtype='COLOR', size=4)
+    density : bpy.props.FloatProperty(default=1.0, min=0.0, max=99999.0)
+    #sigma_s : bpy.props.FloatProperty(default=1.0, min=0.0, max=99999.0)
+
+    #g : bpy.props.FloatProperty(default=0.0, min=0.0001, max=1.0)
+
+    def init(self, context):
+        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Medium")
+        
+    def update(self):
+        print('Updating Mitsuba2 BSDF Medium props..')
+        try:
+            can_continue = True
+        except:
+            can_continue = False
+        if can_continue:
+            print("continues in update rutine.")
+
+    def draw_buttons(self, context, layout):
+        layout.prop(self, "Type",text = 'Type')
+        layout.prop(self, "sigma_t",text = 'sigma_t')
+        layout.prop(self, "albedo",text = 'albedo')
+        layout.prop(self, "density",text = 'density')
+
+    def draw_label(self):
+        return "Mitsuba2 BSDF Medium"
+
 class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     '''A custom node'''
     bl_idname = 'MitsubaBSDFDielectric'
@@ -180,6 +220,7 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     ior_internal_preset = bpy.props.EnumProperty(name = "Internal preset", items=presets , default="bk7")
     use_external_ior = bpy.props.BoolProperty(name="Use external IOR preset", description="Use external IOR preset.", default = True)
     ior_external_preset = bpy.props.EnumProperty(name = "External preset", items=presets , default="vacuum")
+    alpha: bpy.props.FloatProperty(default=0.1, min=0.0, max=1.0)
 
     def init(self, context):
         self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Dielectric")
@@ -190,6 +231,9 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     def draw_buttons(self, context, layout):
 
         layout.prop(self, "roughness",text = 'Use roughness.')
+        if self.roughness == True:
+            layout.prop(self, "alpha",text = 'alpha')
+            
         layout.prop(self, "use_internal_ior",text = 'Use Internal IOR preset')
         if self.use_internal_ior == False:
             layout.prop(self, "fdr_int",text = 'Internal IOR')
