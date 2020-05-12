@@ -221,6 +221,8 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     use_external_ior = bpy.props.BoolProperty(name="Use external IOR preset", description="Use external IOR preset.", default = True)
     ior_external_preset = bpy.props.EnumProperty(name = "External preset", items=presets , default="vacuum")
     alpha: bpy.props.FloatProperty(default=0.1, min=0.0, max=1.0)
+    distributionModels = [("beckmann", "beckmann", "", 1), ("ggx", "ggx", "", 2)]
+    distributionModel = bpy.props.EnumProperty(name = "Distribution model", items=distributionModels , default="beckmann")
 
     def init(self, context):
         self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Dielectric")
@@ -233,6 +235,7 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
         layout.prop(self, "roughness",text = 'Use roughness.')
         if self.roughness == True:
             layout.prop(self, "alpha",text = 'alpha')
+            layout.prop(self, "distributionModel",text = 'Distribution model')
             
         layout.prop(self, "use_internal_ior",text = 'Use Internal IOR preset')
         if self.use_internal_ior == False:

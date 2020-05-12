@@ -301,6 +301,7 @@ def export_medium(scene_file, inputNode):
                 scene_file.write('</medium>\n')
     return ''
 
+#TODO: Add alpha, alpha_u, alpha_v parameters
 def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
 
     if (mat.roughness == False):
@@ -308,6 +309,7 @@ def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
     else:
         scene_file.write('<bsdf type="roughdielectric" id="%s">\n' % materialName)
         scene_file.write('<float name="alpha" value="%s"/>\n' %(mat.alpha))
+        scene_file.write('<string name="distribution" value="%s"/>\n' %(mat.distributionModel))
     
     if (mat.use_internal_ior == False):
         scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
