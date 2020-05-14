@@ -39,11 +39,6 @@ class MitsubaRenderSettingsPanel(bpy.types.Panel):
             return True
 
     def draw(self, context):
-        
-        #Hide the Mitsuba render panel if Mitsuba render engine is not currently selected.
-        # engine = context.scene.render.engine
-        # if engine != 'Mitsuba2_Renderer':
-        #     bpy.utils.unregister_class(MitsubaRenderSettingsPanel)
 
         layout = self.layout
 
