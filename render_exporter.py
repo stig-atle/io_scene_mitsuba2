@@ -22,21 +22,25 @@ class MitsubaRenderEngine(bpy.types.RenderEngine):
     def render(self, scene):
         self.report({'ERROR'}, "Use export function in Mitsuba2 panel.")
         
-from bl_ui import properties_render
-from bl_ui import properties_material
-for member in dir(properties_render):
-    subclass = getattr(properties_render, member)
-    try:
-        subclass.COMPAT_ENGINES.add('Mitsuba2_Renderer')
-    except:
-        pass
+# from bl_ui import properties_render
+# from bl_ui import properties_material
+# for member in dir(properties_render):
+#     subclass = getattr(properties_render, member)
+#     try:
+#         subclass.COMPAT_ENGINES.add('Mitsuba2_Renderer')
+#     except:
+#         pass
 
-for member in dir(properties_material):
-    subclass = getattr(properties_material, member)
-    try:
-        subclass.COMPAT_ENGINES.add('Mitsuba2_Renderer')
-    except:
-        pass
+# del properties_render
+
+# for member in dir(properties_material):
+#     subclass = getattr(properties_material, member)
+#     try:
+#         subclass.COMPAT_ENGINES.add('Mitsuba2_Renderer')
+#     except:
+#         pass
+
+# del properties_material
 
 bpy.utils.register_class(MitsubaRenderEngine)
 exportedMaterials = list()
@@ -113,7 +117,8 @@ def export_camera(scene_file):
             scene_file.write('<float name="focus_distance" value="%s"/>\n' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
             scene_file.write('<float name="aperture_radius" value="%s"/>\n' % (bpy.data.scenes['Scene'].lensradius))
         else:
-            scene_file.write('<float name="aperture_radius" value="0.0"/>\n')
+            # mitsuba dont support aperture_radius 0.0:
+            scene_file.write('<float name="aperture_radius" value="2.8"/>\n')
 
         #Write out the sampler for the image.
         scene_file.write('\t\t<sampler type="independent">\n')
@@ -123,8 +128,8 @@ def export_camera(scene_file):
         scene_file.write('\t\t<transform name="to_world">\n')
         scene_file.write('\t\t\t<lookat\n origin="%s, %s, %s"\n target="%s, %s, %s"\n up="%s, %s, %s"\n/>\n' % \
                         (from_point.x, from_point.y, from_point.z, \
-                         at_point.x, at_point.y, at_point.z, \
-                         up_point[0],up_point[1],up_point[2]))
+                        at_point.x, at_point.y, at_point.z, \
+                        up_point[0],up_point[1],up_point[2]))
         scene_file.write('\t\t</transform>\n')
         scene_file.write('\t</sensor>\n')
 

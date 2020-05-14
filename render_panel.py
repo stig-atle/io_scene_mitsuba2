@@ -1,5 +1,6 @@
 import bpy
 from . import render_exporter
+from bl_ui.properties_render import RENDER_PT_context
 
 class ExportMitsuba2Scene(bpy.types.Operator):
     bl_idname = 'scene.export'
@@ -27,6 +28,7 @@ class MitsubaRenderSettingsPanel(bpy.types.Panel):
     bl_context = "render"
     COMPAT_ENGINES = {'Mitsuba2_Renderer'}
 
+
     #Hide the Mitsuba render panel if Mitsuba render engine is not currently selected.
     @classmethod
     def poll(cls, context):
@@ -37,9 +39,11 @@ class MitsubaRenderSettingsPanel(bpy.types.Panel):
             return True
 
     def draw(self, context):
-        engine = context.scene.render.engine
-        if engine != 'Mitsuba2_Renderer':
-            bpy.utils.unregister_class(MitsubaRenderSettingsPanel)
+        
+        #Hide the Mitsuba render panel if Mitsuba render engine is not currently selected.
+        # engine = context.scene.render.engine
+        # if engine != 'Mitsuba2_Renderer':
+        #     bpy.utils.unregister_class(MitsubaRenderSettingsPanel)
 
         layout = self.layout
 
@@ -117,8 +121,21 @@ class MitsubaRenderSettingsPanel(bpy.types.Panel):
         row = layout.row()
         layout.operator("scene.export", icon='MESH_CUBE', text="Export scene")
 
+def compatible_panels():
+    panels = [
+        "RENDER_PT_color_management",
+        "RENDER_PT_color_management_curves",
+    ]
+    types = bpy.types
+    return [getattr(types, p) for p in panels if hasattr(types, p)]
+
 def register():
-    
+
+    # We append our draw function to the existing Blender render panel
+    RENDER_PT_context.append(MitsubaRenderSettingsPanel)
+    for panel in compatible_panels():
+        panel.COMPAT_ENGINES.add('Mitsuba2_Renderer')
+
     bpy.types.Scene.exportpath = bpy.props.StringProperty(
         name="",
         description="Export folder",
@@ -160,3 +177,9 @@ def register():
     bpy.types.Scene.direct_integrator_emitter_samples = bpy.props.IntProperty(name = "Emitter samples", description = "specifies the number of samples that should be generated using the direct illumination strategies implemented by the scene's emitters. (Default: set to the value of 'shading samples')", default = 1, min = 1, max = 9999)
     bpy.types.Scene.direct_integrator_bsdf_samples = bpy.props.IntProperty(name = "BSDF samples", description = "specifies the number of samples that should be generated using the BSDF sampling strategies implemented by the scene's surfaces.", default = 1, min = 1, max = 9999)
     
+
+
+def unregister():
+    RENDER_PT_context.remove(MitsubaRenderSettingsPanel)
+    for panel in compatible_panels():
+        panel.COMPAT_ENGINES.remove('Mitsuba2_Renderer')
