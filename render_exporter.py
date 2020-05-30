@@ -40,6 +40,7 @@ for member in dir(properties_material):
 
 bpy.utils.register_class(MitsubaRenderEngine)
 exportedMaterials = list()
+exportedTextures = list()
 #Camera code:
 #https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix
 def measure(first, second):
@@ -175,107 +176,46 @@ def export_EnviromentMap(scene_file):
         scene_file.write('\t\t\t<float name="scale" value="%s"/>\n' % (environmentmapscaleValue))
         scene_file.write("\t</emitter>\n")
 
-def export_defaultMaterial(scene_file):
-    scene_file.write(r'Material "plastic"')
-    scene_file.write("\n")
-    scene_file.write(r'"color Kd" [.1 .1 .1]')
-    scene_file.write("\n")
-    scene_file.write(r'"color Ks" [.7 .7 .7] "float roughness" .1')
-    scene_file.write("\n\n")
-    return ''
-
-def exportTextureInSlotNew(scene_file,textureSlotParam,isFloatTexture):
-    scene_file.write("\n")
-    srcfile = bpy.path.abspath(textureSlotParam)
-    texturefilename = getTextureInSlotName(srcfile)
-    if isFloatTexture :
-        scene_file.write(r'Texture "%s" "float" "imagemap" "string filename" ["%s"]' % (texturefilename, ("textures/" + texturefilename)))
-    else:
-        scene_file.write(r'Texture "%s" "color" "imagemap" "string filename" ["%s"]' % (texturefilename, ("textures/" + texturefilename)))
-
-    scene_file.write("\n")
-    dstdir = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + texturefilename)
-    print("os.path.dirname...")
-    print(os.path.dirname(srcfile))
-    print("\n")
-    print("srcfile: ")
-    print(srcfile)
-    print("\n")
-    print("dstdir: ")
-    print(dstdir)
-    print("\n")
-    print("File name is :")
-    print(texturefilename)
-    print("Copying texture from source directory to destination directory.")
-    shutil.copyfile(srcfile, dstdir)
-    return ''
-
-def export_texture_from_input (scene_file, inputSlot, mat, isFloatTexture):
-    kdTextureName = ""
-    slot = inputSlot
-    print(mat)
-    print(mat.inputs)
-    print(mat.outputs[0].name)
-    print(mat.inputs[0].name)
-    matnodes = mat.node_tree.nodes
-    imgnodes = 0
-    imgnodes = [n for n in matnodes if n.type == 'TEX_IMAGE']
-    if (len(imgnodes) == 0):
-        print("We have no texture defined, exporting RGB")
-        return ""
-    else:
-        print('number of image nodes connected:')
-        print(len(imgnodes))
-        print('image nodes')
-        print(imgnodes)
-
-
-    links = mat.node_tree.links
+def export_texture_from_input (scene_file, inputSlot):
+    textureName = ""
+    links = inputSlot.links
     print('Number of links: ')
     print(len(links))
-
-    #link = next(l for l in links if l.to_socket == slot)
-    link = None
-    for currentLink in links:
-        print(currentLink)
-        if currentLink.to_socket == slot:
-            print('Found the texture')
-            link = currentLink
-    
-    if link is None:
-        return ""
-    
-    if link:
-        print('Current link type:')
-        print(link.from_node.type)
-        if link.from_node.type == 'TEX_IMAGE':
-            image = link.from_node.image
-            print('Found image!')
-            print(image.name)
-            print('At index:')
-            kdTextureName  = image.name
-            exportTextureInSlotNew(scene_file,image.filepath,isFloatTexture)
-    return kdTextureName
-
-def followLinks(node_in):
-    for n_inputs in node_in.inputs:
-        for node_links in n_inputs.links:
-            print("followLinks going from " + node_links.from_node.name)
-            followLinks(node_links.from_node)
-
-def followLinksOutput(node_in):
-    for n_inputs in node_in.outputs:
-        for node_links in n_inputs.links:
-            print("followLinks going to " + node_links.to_node.name)
-            followLinksOutput(node_links.to_node)
+    for x in inputSlot.links:
+        textureName = x.from_node.image.name
+        #If the texture has not been defined yet - we export it
+        if x.from_node.image.name not in exportedTextures:
+            exportedTextures.append(x.from_node.image.name)
+            print("Checking input named: " + inputSlot.name)
+            #if x == inputSlotName:
+            print("Has a image named:" + x.from_node.image.name)
+            print("at path: " + bpy.path.abspath(x.from_node.image.filepath))
+            #print("going to named node:" + x.from_node.image.name)
+            print("going to type node:" + x.from_node.type)
+            shutil.copyfile(bpy.path.abspath(x.from_node.image.filepath), bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + x.from_node.image.name))
+            scene_file.write('<texture type="bitmap" id="%s">\n' % x.from_node.image.name)
+            scene_file.write('<string name="filename" value="textures/%s"/>\n' % x.from_node.image.name)
+            scene_file.write('<transform name="to_uv">\n')
+            scene_file.write('</transform>\n')
+            scene_file.write('</texture>\n')
+    return textureName
 
 def export_mitsuba_conductor_material (scene_file, mat, materialName):
+    
+    specular_reflectance_texture_name = ""
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    
     if mat.roughness:
         scene_file.write('<bsdf type="roughconductor" id="%s">\n' % materialName)
         scene_file.write('<float name="alpha_u" value="%s"/>\n' % mat.alpha_u)
         scene_file.write('<float name="alpha_v" value="%s"/>\n' % mat.alpha_v)
     else:
         scene_file.write('<bsdf type="conductor" id="%s">\n' % materialName)
+
+    if specular_reflectance_texture_name == "" :
+        scene_file.write('<rgb name="specular_reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="specular_reflectance"/>\n' %(specular_reflectance_texture_name))
 
     scene_file.write('<string name="material" value="%s"/>\n' %(mat.named_preset))
     scene_file.write('</bsdf>\n')
@@ -304,6 +244,12 @@ def export_medium(scene_file, inputNode):
 #TODO: Add alpha, alpha_u, alpha_v parameters
 def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
 
+    specular_reflectance_texture_name = ""
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    
+    specular_transmittance_texture_name = ""
+    specular_transmittance_texture_name = export_texture_from_input(scene_file,mat.inputs[1])
+
     if (mat.roughness == False):
         scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
     else:
@@ -321,65 +267,60 @@ def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
     else:
         scene_file.write('<string name="ext_ior" value="%s"/>\n' %(mat.ior_external_preset))
 
+    if specular_reflectance_texture_name == "" :
+        scene_file.write('<rgb name="specular_reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="specular_reflectance"/>\n' %(specular_reflectance_texture_name))
+    
+    if specular_transmittance_texture_name == "":
+        scene_file.write('<rgb name="specular_transmittance"  value="%s, %s, %s"/>\n' %(mat.inputs[1].default_value[0], mat.inputs[1].default_value[1], mat.inputs[1].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="specular_transmittance"/>\n' %(specular_transmittance_texture_name))
+
     scene_file.write('</bsdf>\n')
     
     return ''
 
 def export_mitsuba_bsdf_plastic_material (scene_file, mat, materialName):
+    diffuse_reflectance_texture_name = ""
+    diffuse_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    
+    specular_reflectance_texture_name = ""
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[1])
+
     scene_file.write('<bsdf type="plastic" id="%s">\n' % materialName)
-    scene_file.write('<rgb name="diffuse_reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
-    scene_file.write('<rgb name="specular_reflectance"  value="%s, %s, %s"/>\n' %(mat.inputs[1].default_value[0], mat.inputs[1].default_value[1], mat.inputs[1].default_value[2]))
+    
+    if diffuse_reflectance_texture_name == "" :
+        scene_file.write('<rgb name="diffuse_reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="diffuse_reflectance"/>\n' %(diffuse_reflectance_texture_name))
+
+    if specular_reflectance_texture_name == "":
+        scene_file.write('<rgb name="specular_reflectance"  value="%s, %s, %s"/>\n' %(mat.inputs[1].default_value[0], mat.inputs[1].default_value[1], mat.inputs[1].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="specular_reflectance"/>\n' %(specular_reflectance_texture_name))
+    
     scene_file.write('<float name="int_ior" value="%s"/>\n' %(mat.fdr_int))
     scene_file.write('<float name="ext_ior" value="%s"/>\n' %(mat.fdr_ext))
     scene_file.write('</bsdf>\n')
     return ''
 
+
 def export_mitsuba_bsdf_diffuse_material (scene_file, mat, materialName):
     print('Currently exporting Mitsuba BSDF diffuse material')
     print (mat.name)
-
-    for n in mat.inputs:
-        print(n.name)
     
-    for n in mat.outputs:
-        print(n.name)
-
+    mat.use_nodes = True
+    reflectanceTextureName = ""
+    reflectanceTextureName = export_texture_from_input(scene_file,mat.inputs[0])
+    
     scene_file.write('<bsdf type="diffuse" id="%s">\n' % materialName)
-    scene_file.write('<rgb name="reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    if reflectanceTextureName == "" :
+        scene_file.write('<rgb name="reflectance" value="%s %s %s"/>\n' %(mat.inputs[0].default_value[0], mat.inputs[0].default_value[1], mat.inputs[0].default_value[2]))
+    else:
+        scene_file.write('<ref id="%s" name="reflectance"/>\n' %(reflectanceTextureName))
     scene_file.write('</bsdf>\n')
     return ''
-
-def hastexturenewcode(mat, slotname):
-    foundTex = False
-    print ("checking texture for : ")
-    print(mat.name)
-    print("checking slot named new code:")
-    print(slotname)
-    nodes = mat.node_tree.nodes
-    #print(mat.[slotname])
-    #if mat.slotname == !"":
-        #print("Found filepath stored in slot:")
-        #foundTex = True
-    #print(mat.slotname)
-    #print(mat.[slotname])
-    print(len(mat.node_tree.links))
-    if (len(mat.node_tree.links) > 1):
-        socket = nodes[mat.node_tree.nodes[1].name].inputs[slotname]
-        print("socket type:")
-        print(socket.type)
-        print("data stored in slot:")
-        print(nodes[mat.node_tree.nodes[1].name].inputs[slotname])
-        #links = mat.node_tree.links
-        #link = next(l for l in links if l.to_socket == socket)
-        #if link.from_node.type == 'TEX_IMAGE':
-    return foundTex
-
-def hastextureInSlot (mat,index):
-    foundTex = False
-    if getTextureInSlotName(index) != "":
-        foundTex = True
-
-    return foundTex
 
 def getTextureInSlotName(textureSlotParam):
     srcfile = textureSlotParam
@@ -388,58 +329,6 @@ def getTextureInSlotName(textureSlotParam):
     print(tail)
 
     return tail
-
-def exportFloatTextureInSlotNew(scene_file,textureSlotParam):
-    scene_file.write("\n")
-    srcfile = bpy.path.abspath(textureSlotParam)
-    texturefilename = getTextureInSlotName(srcfile)
-    scene_file.write(r'Texture "%s" "float" "imagemap" "string filename" ["%s"]' % (texturefilename, ("textures/" + texturefilename)))
-    scene_file.write("\n")
-    dstdir = bpy.path.abspath('//pbrtExport/textures/' + texturefilename)
-    print("os.path.dirname...")
-    print(os.path.dirname(srcfile))
-    print("\n")
-    print("srcfile: ")
-    print(srcfile)
-    print("\n")
-    print("dstdir: ")
-    print(dstdir)
-    print("\n")
-    print("File name is :")
-    print(texturefilename)
-    print("!!!!! skipping copying for now..")
-    #shutil.copyfile(srcfile, dstdir)
-#    foundTex = True
-    return ''
-
-
-    ##TODO: write out the path to the file and call function from where we check if texture is in slot.
-    ## send the filepath, slot name from there.
-def exportTextureInSlot(scene_file,index,mat,slotname):
-    nodes = mat.node_tree.nodes
-    slot = index
-#    foundTex = False
-    socket = nodes[mat.node_tree.nodes[1].name].inputs[slot]
-    links = mat.node_tree.links
-    link = next(l for l in links if l.to_socket == socket)
-    if link:
-        image = link.from_node.image
-        scene_file.write(r'Texture "%s" "color" "imagemap" "string filename" ["%s"]' % (image.name, ("textures/" + image.name))) #.replace("\\","/")
-        scene_file.write("\n")
-        srcfile = bpy.path.abspath(image.filepath)
-        dstdir = bpy.path.abspath('//pbrtExport/textures/' + image.name)
-        print("os.path.dirname...")
-        print(os.path.dirname(srcfile) + image.name)
-        print("srcfile: ")
-        print(srcfile)
-        print("\n")
-        print("dstdir: ")
-        print(dstdir)
-        print("\n")
-
-        shutil.copyfile(srcfile, dstdir)
-#        foundTex = True
-    return ''
 
 def exportObject_medium(scene_file, material):
     if material is None:
@@ -466,7 +355,7 @@ def export_material(scene_file, material):
     global hastexture
     hastexture = False
     currentMaterial = None
-
+    material.use_nodes = True
     if material and material.use_nodes: #if it is using nodes
         print('Exporting materal named: ', material.name)
         
@@ -488,10 +377,6 @@ def export_material(scene_file, material):
                         if currentMaterial.name == 'Mitsuba2 BSDF Conductor':
                             export_mitsuba_conductor_material(scene_file,currentMaterial,material.name)
     return''
-
-    # matrix to string
-def matrixtostr(matrix):
-    return '%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f '%(matrix[0][0],matrix[0][1],matrix[0][2],matrix[0][3],matrix[1][0],matrix[1][1],matrix[1][2],matrix[1][3],matrix[2][0],matrix[2][1],matrix[2][2],matrix[2][3],matrix[3][0],matrix[3][1],matrix[3][2],matrix[3][3])
 
 def createDefaultExportDirectories(scene_file, scene):
     texturePath = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures')
@@ -531,8 +416,6 @@ def export_gometry_as_obj(scene_file, scene):
             scene_file.write('<shape type="obj">\n')
             scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
             scene_file.write('<ref id="%s"/>\n' % object.material_slots[i].material.name)
-            #export_material(scene_file, object.material_slots[0].material)
-            #scene_file.write('<ref id="%s"/>\n' %(object.material_slots[0].material.name))
             exportObject_medium(scene_file, object.material_slots[0].material)
             scene_file.write('</shape>\n')
     return ''
@@ -575,6 +458,7 @@ def export_Mitsuba(filepath, scene , frameNumber):
 
     with open(out, 'w') as scene_file:
         exportedMaterials.clear()
+        exportedTextures.clear()
         createDefaultExportDirectories(scene_file,scene)
         scene_begin(scene_file)
         export_integrator(scene_file, scene)

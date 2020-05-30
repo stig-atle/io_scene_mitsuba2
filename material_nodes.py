@@ -112,7 +112,7 @@ class MitsubaBSDF_Conductor(Node, MitsubaTreeNode):
         mat = bpy.context.active_object.active_material
         if mat is not None:
             bpy.data.materials[mat.name].diffuse_color=self.inputs["diffuse_reflectance"].default_value
-        
+            
     def updateViewportColorNew(self):
         print("Trying to update color on material..")
         mat = bpy.context.active_object.active_material
@@ -128,6 +128,8 @@ class MitsubaBSDF_Conductor(Node, MitsubaTreeNode):
 
     def init(self, context):
         self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Conductor")
+        specular_reflectance = self.inputs.new('NodeSocketColor', "Specular reflectance")    
+        specular_reflectance.default_value=(1.0,1.0,1.0,1.0)
 
     def draw(self, context):
         print("draw called")
@@ -224,8 +226,13 @@ class MitsubaBSDF_Dielectric(Node, MitsubaTreeNode):
     distributionModels = [("beckmann", "beckmann", "", 1), ("ggx", "ggx", "", 2)]
     distributionModel = bpy.props.EnumProperty(name = "Distribution model", items=distributionModels , default="beckmann")
 
+
     def init(self, context):
         self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Dielectric")
+        specular_reflectance = self.inputs.new('NodeSocketColor', "Specular reflectance")
+        specular_reflectance.default_value=(1.0,1.0,1.0,1.0)
+        specular_transmittance = self.inputs.new('NodeSocketColor', "Specular transmittance")
+        specular_transmittance.default_value=(1.0,1.0,1.0,1.0)
 
     def draw(self, context):
         print("draw called")
@@ -303,7 +310,6 @@ class MitsubaBSDF_Plastic(Node, MitsubaTreeNode):
         specular_reflectance = self.inputs.new('NodeSocketColor', "Specular reflectance")
         specular_reflectance.default_value=(1.0,1.0,1.0,1.0)
 
-
     def draw(self, context):
         print("draw called")
 
@@ -320,14 +326,6 @@ class MitsubaBSDF_Plastic(Node, MitsubaTreeNode):
 
     def update(self):
         print("update(self) is called")
-        
-
-        for skt in self.outputs:
-            if skt.links:
-                #self.diffuse_color = self.diffuse_reflectance
-                if (skt.name == "diffuse_reflectance"):
-                    #updateViewportColor()
-                    print("Output socket {} is linked".format(skt.name))
 
 # Derived from the Node base type.
 class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):
@@ -368,20 +366,11 @@ class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):
         mat = bpy.context.active_object.active_material
         if mat is not None:
             bpy.data.materials[mat.name].diffuse_color=self.inputs[0].default_value
-            #node_tree.nodes["Mitsuba BSDF"].inputs[0].default_value
-
-    #Sigma : bpy.props.FloatProperty(default=0.0, min=0.0, max=1.0)
-    #Kd : bpy.props.FloatVectorProperty(name="Kd", description="Kd",default=(0.8, 0.8, 0.8, 1.0), min=0, max=1, subtype='COLOR', size=4,update=updateViewportColor)
 
     def init(self, context):
-        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF")
-        #KdTexture_node = self.inputs.new('NodeSocketColor', "Kd Texture")
-        #KdTexture_node.hide_value = True
-        kd = self.inputs.new('NodeSocketColor', "kd")
-        kd.default_value=(0.8,0.8,0.8,1.0)
-        #Set up a callback for the material
-        #self.kd.callback(self.name, "uda")
-        #self.draw.callback_enable()
+        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Diffuse")
+        reflectance = self.inputs.new('NodeSocketColor', "reflectance")
+        reflectance.default_value=(0.8,0.8,0.8,1.0)
 
     def draw(self, context):
         print("draw called")
