@@ -381,7 +381,7 @@ class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):
         #layout.prop(self,"kd_tex" , text = 'kdTexture')
         
     def draw_label(self):
-        return "Mitsuba2 BSDF"
+        return "Mitsuba2 BSDF Diffuse"
 
     def socket_value_update(self,context):
         print("Socket value changed..")
