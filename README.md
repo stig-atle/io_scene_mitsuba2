@@ -10,13 +10,13 @@ https://www.patreon.com/stigatle
 **Current supported features (more being developed):**\
 Export meshes as .obj then references them.\
 Camera - with DOF\
-Environment map (hdr etc)\
+Environment map (hdr etc)
 
 **Integrators:**\
 Path\
 Direct\
 VolPath\
-VolPathSimple\
+VolPathSimple
 
 **Material nodes:**\
 BSDF Diffuse\
