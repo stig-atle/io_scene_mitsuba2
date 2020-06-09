@@ -9,18 +9,18 @@ https://www.patreon.com/stigatle
 
 This is a exporter for blender 2.80 for Mitsuba2.
 
-#Current supported features (more being developed):
+# Current supported features (more being developed):
 Export meshes as .obj then references them.
 Camera - with DOF
 Environment map (hdr etc)
 
-#Integrators:
+# Integrators:
 Path
 Direct
 VolPath
 VolPathSimple
 
-#Material nodes:
+# Material nodes:
 BSDF Diffuse
 BSDF Plastic
 BSDF Dielectric
