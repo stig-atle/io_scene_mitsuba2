@@ -25,7 +25,8 @@ BSDF Dielectric\
 BSDF BlackBody (for mesh lights)\
 BSDF Conductor\
 BSDF Medium (to use with glass)\
-Textures (image map).\
+BSDF Blend (for mixing materials)\
+Textures (image map).
 
 ![Alt text](/sampleImages/01_textured.jpg?raw=true "Title")
 ![Alt text](/sampleImages/02_shader_nodes.jpg?raw=true "Title")

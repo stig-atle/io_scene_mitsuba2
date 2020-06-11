@@ -34,6 +34,7 @@ Mitsuba_node_categories = [
         NodeItem("MitsubaBlackBody"),
         NodeItem("MitsubaBSDFConductor"),
         NodeItem("MitsubaBSDFMedium"),
+        NodeItem("MitsubaBSDFBlend"),
         ]),
     ]
 
@@ -412,6 +413,24 @@ class MitsubaBSDF_Diffuse(Node, MitsubaTreeNode):
                     #updateViewportColor()
                     print("Output socket {} is linked".format(skt.name))
 
+class MitsubaBSDF_Blend(Node, MitsubaTreeNode):
+    '''A custom node'''
+    bl_idname = 'MitsubaBSDFBlend'
+    bl_label = 'Mitsuba2 BSDF Blend'
+    bl_icon = 'INFO'
+
+    def init(self, context):
+        self.outputs.new('NodeSocketFloat', "Mitsuba2 BSDF Blend")
+        texture_node = self.inputs.new('NodeSocketColor', "Texture")
+        texture_node.hide_value = True
+        material1 = self.inputs.new('NodeSocketColor', "material1")
+        material1.hide_value = True
+        material2 = self.inputs.new('NodeSocketColor', "material2")
+        material2.hide_value = True
+
+    def draw_label(self):
+        return "Mitsuba2 BSDF Blend"
+		
 
 def register():
     nodeitems_utils.register_node_categories("MITSUBA2_CUSTOM_NODES", Mitsuba_node_categories)

@@ -221,6 +221,48 @@ def export_mitsuba_conductor_material (scene_file, mat, materialName):
     scene_file.write('</bsdf>\n')
     return ''
 
+def export_mitsuba_blend_material (scene_file, mat, materialName):
+    print("Exporting blend material node!")
+    
+    slot1Name = ""
+    slot2Name = ""
+    #Define the material nodes assigned before we export the blend.
+    links = mat.inputs[1].links
+    print('Number of links in slot1: ')
+    print(len(links))
+    for x in mat.inputs[1].links:
+        slot1Name = x.from_node.name
+        if x.from_node.name not in exportedMaterials:
+            export_material_node(scene_file,x.from_node, x.from_node.name)
+            exportedMaterials.append(slot1Name)
+    
+    links = mat.inputs[2].links
+    print('Number of links in slot2: ')
+    print(len(links))
+    for x in mat.inputs[2].links:
+        slot2Name = x.from_node.name
+        if x.from_node.name not in exportedMaterials:
+            export_material_node(scene_file, x.from_node, x.from_node.name)
+            exportedMaterials.append(slot2Name)
+
+    blend_texture_name = ""
+    blend_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    if blend_texture_name != "" and slot1Name != "" and slot2Name != "" :
+        scene_file.write('<bsdf type="blendbsdf" id="%s">\n' % materialName)
+        scene_file.write('<texture name="weight" type="bitmap">\n')
+        scene_file.write('<boolean name="raw" value="true"/>\n')
+        scene_file.write('<string name="filename" value="textures/%s"/>\n' %(blend_texture_name))
+        scene_file.write('<transform name="to_uv">\n')
+        scene_file.write('</transform>\n')
+        scene_file.write('</texture>\n')
+        scene_file.write('<ref id="%s"/>\n' % slot1Name)
+        scene_file.write('<ref id="%s"/>\n' % slot2Name)
+        scene_file.write('</bsdf>\n')
+    
+
+
+    return ''
+
 def export_mitsuba_blackbody_material (scene_file, mat, materialName):
     scene_file.write('<emitter type="area" id="%s">\n' % materialName)
     scene_file.write('<spectrum type="blackbody" name="radiance">\n')
@@ -346,6 +388,23 @@ def exportObject_medium(scene_file, material):
                 export_medium(scene_file,node.inputs[1])
     return ''
 
+def export_material_node(scene_file,currentMaterial, materialName):
+    print("export_material_node : " + currentMaterial.name)
+    #print("export_material_node bl_idname :" + currentMaterial.bl_idname)
+    if currentMaterial.bl_idname == 'MitsubaBSDFDiffuse':
+        export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, materialName)
+    if currentMaterial.bl_idname == 'MitsubaBSDFPlastic':
+        export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, materialName)
+    if currentMaterial.bl_idname == 'MitsubaBSDFDielectric':
+        export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, materialName)
+    if currentMaterial.bl_idname == 'MitsubaBlackBody':
+        export_mitsuba_blackbody_material(scene_file,currentMaterial,materialName)
+    if currentMaterial.bl_idname == 'MitsubaBSDFConductor':
+        export_mitsuba_conductor_material(scene_file,currentMaterial,materialName)
+    if currentMaterial.bl_idname == 'MitsubaBSDFBlend':
+        export_mitsuba_blend_material(scene_file, currentMaterial, materialName)
+    return ''
+
 def export_material(scene_file, material):
     if material is None:
         print("no material on object")
@@ -358,24 +417,13 @@ def export_material(scene_file, material):
     material.use_nodes = True
     if material and material.use_nodes: #if it is using nodes
         print('Exporting materal named: ', material.name)
-        
         #Find the surface output node, then export the connected material
         for node in material.node_tree.nodes:
             if node.name == 'Material Output':
                 for input in node.inputs:
                     for node_links in input.links:
-                        print("going to " + node_links.from_node.name)
                         currentMaterial =  node_links.from_node
-                        if currentMaterial.name == 'Mitsuba2 BSDF Diffuse':
-                            export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, material.name)
-                        if currentMaterial.name == 'Mitsuba2 BSDF Plastic':
-                            export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, material.name)
-                        if currentMaterial.name == 'Mitsuba2 BSDF Dielectric':
-                            export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, material.name)
-                        if currentMaterial.name == 'Mitsuba2 BlackBody':
-                            export_mitsuba_blackbody_material(scene_file,currentMaterial,material.name)
-                        if currentMaterial.name == 'Mitsuba2 BSDF Conductor':
-                            export_mitsuba_conductor_material(scene_file,currentMaterial,material.name)
+                        export_material_node(scene_file,currentMaterial, material.name)
     return''
 
 def createDefaultExportDirectories(scene_file, scene):
