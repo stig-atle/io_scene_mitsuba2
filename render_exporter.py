@@ -436,7 +436,7 @@ def createDefaultExportDirectories(scene_file, scene):
         print(texturePath)
         os.makedirs(texturePath)
 
-def export_gometry_as_obj(scene_file, scene):
+def export_gometry_as_obj(scene_file, scene, frameNumber):
     objects = bpy.data.objects
     for object in objects:
         print("exporting:")
@@ -452,8 +452,8 @@ def export_gometry_as_obj(scene_file, scene):
             bpy.ops.object.select_all(action="DESELECT")
             object.select_set(True) # 2.8+ selection method.
 
-            objFilePath = bpy.data.scenes[0].exportpath + 'meshes/' + object.name + '.obj'
-            objFolderPath = bpy.data.scenes[0].exportpath + 'meshes/'
+            objFilePath = bpy.data.scenes[0].exportpath + 'meshes' + frameNumber +'/' + object.name + '.obj'
+            objFolderPath = bpy.data.scenes[0].exportpath + 'meshes' + frameNumber + '/'
             if not os.path.exists(objFolderPath):
                 print('Meshes directory did not exist, creating: ')
                 print(objFolderPath)
@@ -462,7 +462,7 @@ def export_gometry_as_obj(scene_file, scene):
             bpy.ops.export_scene.obj(filepath=objFilePath, use_selection=True, axis_forward='Y', axis_up='Z', use_materials=False)
             
             scene_file.write('<shape type="obj">\n')
-            scene_file.write('<string name="filename" value="meshes/%s"/>\n' % (object.name + '.obj'))
+            scene_file.write('<string name="filename" value="meshes%s/%s"/>\n' % (frameNumber,object.name + '.obj'))
             scene_file.write('<ref id="%s"/>\n' % object.material_slots[i].material.name)
             exportObject_medium(scene_file, object.material_slots[0].material)
             scene_file.write('</shape>\n')
@@ -513,6 +513,6 @@ def export_Mitsuba(filepath, scene , frameNumber):
         export_camera(scene_file)
         export_EnviromentMap(scene_file)
         export_point_lights(scene_file,scene)
-        export_gometry_as_obj(scene_file,scene)
+        export_gometry_as_obj(scene_file,scene, frameNumber)
         scene_end(scene_file)
         scene_file.close()
