@@ -10,7 +10,8 @@ https://www.patreon.com/stigatle
 **Current supported features (more being developed):**\
 Export meshes as .obj then references them.\
 Camera - with DOF\
-Environment map (hdr etc)
+Environment map (hdr etc)\
+Batch export of frames, so that you can render animations.
 
 **Integrators:**\
 Path\
