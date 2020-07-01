@@ -11,7 +11,8 @@ https://www.patreon.com/stigatle
 Export meshes as .obj then references them.\
 Camera - with DOF\
 Environment map (hdr etc)\
-Batch export of frames, so that you can render animations.
+Batch export of frames, so that you can render animations.\
+Point/spot/mesh lights.
 
 **Integrators:**\
 Path\
