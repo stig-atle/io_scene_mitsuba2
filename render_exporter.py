@@ -51,16 +51,15 @@ def measure(first, second):
     distance = sqrt((locx)**2 + (locy)**2 + (locz)**2)
     return distance
 
-def export_point_lights(scene_file, scene):
+def export_lights(scene_file, scene):
     
     for object in scene.objects:
         
         if object is not None and object.type == 'LIGHT':
-            #bpy.context.scene.objects.active = object
-            print('\nTrying to export point light: ' + object.name + ' Type: ' + object.type)
             la = object.data
             print('Light TYPE: ' + la.type)
             if la.type == "POINT" :
+                print('\nExporting point light: ' + object.name + ' Type: ' + object.type)
                 print('\n\nexporting lamp: ' + object.name + ' - type: ' + object.type)
                 print('\nExporting point light: ' + object.name)
                 #bpy.ops.object.select_all(action='DESELECT')
@@ -70,6 +69,24 @@ def export_point_lights(scene_file, scene):
                 scene_file.write("\t\t<transform name=\"to_world\">\n")
                 from_point=object.matrix_world.col[3]
                 scene_file.write("\t\t\t<translate value=\"%s, %s, %s\"/>\n" % (from_point.x, from_point.y, from_point.z))
+                scene_file.write("\t\t</transform>\n")
+                scene_file.write("\t</emitter>\n")
+            if la.type == "SPOT":
+                print('\nExporting spot light: ' + object.name + ' Type: ' + object.type)
+                from_point=object.matrix_world.col[3]
+                at_point=object.matrix_world.col[2]
+                at_point=at_point * -1
+                at_point=at_point + from_point
+                matrix = object.matrix_world.copy()
+                matrixTransposed = matrix.transposed()
+                up_point = matrixTransposed[1]
+
+                scene_file.write("\t<emitter type=\"spot\">\n")
+                scene_file.write("\t\t<transform name=\"to_world\">\n")
+                scene_file.write('\t\t\t<lookat\n origin="%s, %s, %s"\n target="%s, %s, %s"\n up="%s, %s, %s"\n/>\n' % \
+                    (from_point.x, from_point.y, from_point.z, \
+                    at_point.x, at_point.y, at_point.z, \
+                up_point[0],up_point[1],up_point[2]))
                 scene_file.write("\t\t</transform>\n")
                 scene_file.write("\t</emitter>\n")
 
@@ -522,7 +539,7 @@ def export_Mitsuba(filepath, scene , frameNumber):
         export_integrator(scene_file, scene)
         export_camera(scene_file)
         export_EnviromentMap(scene_file)
-        export_point_lights(scene_file,scene)
+        export_lights(scene_file,scene)
         export_gometry_as_obj(scene_file,scene, frameNumber)
         scene_end(scene_file)
         scene_file.close()
