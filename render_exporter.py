@@ -185,14 +185,24 @@ def export_texture_from_input (scene_file, inputSlot):
         textureName = x.from_node.image.name
         #If the texture has not been defined yet - we export it
         if x.from_node.image.name not in exportedTextures:
-            exportedTextures.append(x.from_node.image.name)
             print("Checking input named: " + inputSlot.name)
-            #if x == inputSlotName:
-            print("Has a image named:" + x.from_node.image.name)
+            fromFile = bpy.path.abspath(x.from_node.image.filepath)
+            head, tail = os.path.split(fromFile)
+            exportedTextures.append(tail)
+            print("Has a image named:" + tail)
             print("at path: " + bpy.path.abspath(x.from_node.image.filepath))
-            #print("going to named node:" + x.from_node.image.name)
             print("going to type node:" + x.from_node.type)
-            shutil.copyfile(bpy.path.abspath(x.from_node.image.filepath), bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + x.from_node.image.name))
+            
+            toFile = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + tail)
+            print("from file:")
+            print(os.path.realpath(fromFile))
+            print("to file:")
+            print(os.path.realpath(toFile))
+            if os.path.realpath(fromFile) != os.path.realpath(toFile):
+                shutil.copyfile(os.path.realpath(fromFile), os.path.realpath(toFile))
+            else:
+                print("Texture source, and destination are the same, skipping copying.")
+                
             scene_file.write('<texture type="bitmap" id="%s">\n' % x.from_node.image.name)
             scene_file.write('<string name="filename" value="textures/%s"/>\n' % x.from_node.image.name)
             scene_file.write('<transform name="to_uv">\n')
