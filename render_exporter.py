@@ -41,6 +41,7 @@ for member in dir(properties_material):
 bpy.utils.register_class(MitsubaRenderEngine)
 exportedMaterials = list()
 exportedTextures = list()
+
 #Camera code:
 #https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix
 def measure(first, second):
@@ -92,7 +93,7 @@ def export_lights(scene_file, scene):
 
     return ''
 
-def export_camera(scene_file):
+def export_camera(scene_file, scene):
     print("Fetching camera..")
     cam_ob = bpy.context.scene.camera
     if cam_ob is None:
@@ -100,7 +101,7 @@ def export_camera(scene_file):
         self.report({'ERROR'}, "No camera in scene, aborting")
     elif cam_ob.type == 'CAMERA':
         print("regular scene cam")
-        print("render res: ", bpy.data.scenes['Scene'].render.resolution_x , " x ", bpy.data.scenes['Scene'].render.resolution_y)
+        print("render res: ", scene.render.resolution_x , " x ", scene.render.resolution_y)
         print("Exporting camera: ", cam_ob.name)
 
         # https://blender.stackexchange.com/questions/13738/how-to-calculate-camera-direction-and-up-vector/13739#13739
@@ -122,20 +123,20 @@ def export_camera(scene_file):
         at_point=at_point + from_point
 
         scene_file.write('\t<sensor type="thinlens">\n')
-        export_film(scene_file)
+        export_film(scene_file, scene)
         # https://blender.stackexchange.com/questions/14745/how-do-i-change-the-focal-length-of-a-camera-with-python
         fov = bpy.data.cameras[0].angle * 180 / math.pi
         scene_file.write('<float name="fov" value="%s"/>\n' % fov)
         
-        if bpy.data.scenes['Scene'].dofLookAt is not None:
-            scene_file.write('<float name="focus_distance" value="%s"/>\n' % (measure(cam_ob.matrix_world.translation, bpy.data.scenes['Scene'].dofLookAt.matrix_world.translation)))
-            scene_file.write('<float name="aperture_radius" value="%s"/>\n' % (bpy.data.scenes['Scene'].lensradius))
+        if scene.dofLookAt is not None:
+            scene_file.write('<float name="focus_distance" value="%s"/>\n' % (measure(cam_ob.matrix_world.translation, scene.dofLookAt.matrix_world.translation)))
+            scene_file.write('<float name="aperture_radius" value="%s"/>\n' % (scene.lensradius))
         else:
             scene_file.write('<float name="aperture_radius" value="0.0"/>\n')
 
         #Write out the sampler for the image.
         scene_file.write('\t\t<sampler type="independent">\n')
-        scene_file.write('\t\t<integer name="sample_count" value="%s"/>\n' % bpy.data.scenes[0].spp)
+        scene_file.write('\t\t<integer name="sample_count" value="%s"/>\n' % scene.spp)
         scene_file.write('\t\t</sampler>\n')
         
         scene_file.write('\t\t<transform name="to_world">\n')
@@ -148,17 +149,16 @@ def export_camera(scene_file):
 
     return ''
 
-def export_film(scene_file):
+def export_film(scene_file, scene):
     scene_file.write('<film type="hdrfilm">\n')
-    scene_file.write('<integer name="width" value="%s"/>\n' % bpy.data.scenes[0].resolution_x)
-    scene_file.write('<integer name="height" value="%s"/>\n' % bpy.data.scenes[0].resolution_y)
+    scene_file.write('<integer name="width" value="%s"/>\n' % scene.resolution_x)
+    scene_file.write('<integer name="height" value="%s"/>\n' % scene.resolution_y)
     scene_file.write('<string name="file_format" value = "openexr"/>\n')
     scene_file.write('</film>\n')
     return ''
 
 def scene_begin(scene_file):
     scene_file.write('<scene version="2.0.0">\n')
-    scene_file.write("\n\n")
     return ''
 
 def scene_end(scene_file):
@@ -166,13 +166,13 @@ def scene_end(scene_file):
     scene_file.write("\n")
     return ''
 
-def export_EnviromentMap(scene_file):
-    if bpy.data.scenes[0].environmentmaptpath != "":
-        environmentMapFileName= getTextureInSlotName(bpy.data.scenes[0].environmentmaptpath)
+def export_EnviromentMap(scene_file, scene):
+    if scene.environmentmaptpath != "":
+        environmentMapFileName= getTextureInSlotName(scene.environmentmaptpath)
         
         #Copy the file by getting the full filepath:
-        srcfile = bpy.path.abspath(bpy.data.scenes[0].environmentmaptpath)
-        dstdir = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + environmentMapFileName)
+        srcfile = bpy.path.abspath(scene.environmentmaptpath)
+        dstdir = bpy.path.abspath(scene.exportpath + 'textures/' + environmentMapFileName)
         print("os.path.dirname...")
         print(os.path.dirname(srcfile))
         print("\n")
@@ -187,13 +187,13 @@ def export_EnviromentMap(scene_file):
         print("Copying environment texture from source directory to destination directory.")
         shutil.copyfile(srcfile, dstdir)
 
-        environmentmapscaleValue = bpy.data.scenes[0].environmentmapscale
+        environmentmapscaleValue = scene.environmentmapscale
         scene_file.write("\t<emitter type = \"envmap\" >\n")
         scene_file.write('<string name="filename" value="textures/%s"/>\n' % (environmentMapFileName))
         scene_file.write('\t\t\t<float name="scale" value="%s"/>\n' % (environmentmapscaleValue))
         scene_file.write("\t</emitter>\n")
 
-def export_texture_from_input (scene_file, inputSlot):
+def export_texture_from_input (scene_file, inputSlot, scene):
     textureName = ""
     links = inputSlot.links
     print('Number of links: ')
@@ -210,7 +210,7 @@ def export_texture_from_input (scene_file, inputSlot):
             print("at path: " + bpy.path.abspath(x.from_node.image.filepath))
             print("going to type node:" + x.from_node.type)
             
-            toFile = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures/' + tail)
+            toFile = bpy.path.abspath(scene.exportpath + 'textures/' + tail)
             print("from file:")
             print(os.path.realpath(fromFile))
             print("to file:")
@@ -227,10 +227,10 @@ def export_texture_from_input (scene_file, inputSlot):
             scene_file.write('</texture>\n')
     return textureName
 
-def export_mitsuba_conductor_material (scene_file, mat, materialName):
+def export_mitsuba_conductor_material (scene_file, mat, materialName, scene):
     
     specular_reflectance_texture_name = ""
-    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0], scene)
     
     if mat.roughness:
         scene_file.write('<bsdf type="roughconductor" id="%s">\n' % materialName)
@@ -248,7 +248,7 @@ def export_mitsuba_conductor_material (scene_file, mat, materialName):
     scene_file.write('</bsdf>\n')
     return ''
 
-def export_mitsuba_blend_material (scene_file, mat, materialName):
+def export_mitsuba_blend_material (scene_file, mat, materialName, scene):
     print("Exporting blend material node!")
     
     slot1Name = ""
@@ -260,7 +260,7 @@ def export_mitsuba_blend_material (scene_file, mat, materialName):
     for x in mat.inputs[1].links:
         slot1Name = x.from_node.name
         if x.from_node.name not in exportedMaterials:
-            export_material_node(scene_file,x.from_node, x.from_node.name)
+            export_material_node(scene_file,x.from_node, x.from_node.name, scene)
             exportedMaterials.append(slot1Name)
     
     links = mat.inputs[2].links
@@ -269,11 +269,11 @@ def export_mitsuba_blend_material (scene_file, mat, materialName):
     for x in mat.inputs[2].links:
         slot2Name = x.from_node.name
         if x.from_node.name not in exportedMaterials:
-            export_material_node(scene_file, x.from_node, x.from_node.name)
+            export_material_node(scene_file, x.from_node, x.from_node.name, scene)
             exportedMaterials.append(slot2Name)
 
     blend_texture_name = ""
-    blend_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    blend_texture_name = export_texture_from_input(scene_file,mat.inputs[0], scene)
     if blend_texture_name != "" and slot1Name != "" and slot2Name != "" :
         scene_file.write('<bsdf type="blendbsdf" id="%s">\n' % materialName)
         scene_file.write('<texture name="weight" type="bitmap">\n')
@@ -311,13 +311,13 @@ def export_medium(scene_file, inputNode):
     return ''
 
 #TODO: Add alpha, alpha_u, alpha_v parameters
-def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
+def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName, scene):
 
     specular_reflectance_texture_name = ""
-    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0], scene)
     
     specular_transmittance_texture_name = ""
-    specular_transmittance_texture_name = export_texture_from_input(scene_file,mat.inputs[1])
+    specular_transmittance_texture_name = export_texture_from_input(scene_file,mat.inputs[1], scene)
 
     if (mat.roughness == False):
         scene_file.write('<bsdf type="dielectric" id="%s">\n' % materialName)
@@ -350,12 +350,12 @@ def export_mitsuba_bsdf_dielectric_material (scene_file, mat, materialName):
     
     return ''
 
-def export_mitsuba_bsdf_plastic_material (scene_file, mat, materialName):
+def export_mitsuba_bsdf_plastic_material (scene_file, mat, materialName, scene):
     diffuse_reflectance_texture_name = ""
-    diffuse_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0])
+    diffuse_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[0], scene)
     
     specular_reflectance_texture_name = ""
-    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[1])
+    specular_reflectance_texture_name = export_texture_from_input(scene_file,mat.inputs[1], scene)
 
     scene_file.write('<bsdf type="plastic" id="%s">\n' % materialName)
     
@@ -375,13 +375,13 @@ def export_mitsuba_bsdf_plastic_material (scene_file, mat, materialName):
     return ''
 
 
-def export_mitsuba_bsdf_diffuse_material (scene_file, mat, materialName):
+def export_mitsuba_bsdf_diffuse_material (scene_file, mat, materialName, scene):
     print('Currently exporting Mitsuba BSDF diffuse material')
     print (mat.name)
     
     mat.use_nodes = True
     reflectanceTextureName = ""
-    reflectanceTextureName = export_texture_from_input(scene_file,mat.inputs[0])
+    reflectanceTextureName = export_texture_from_input(scene_file,mat.inputs[0], scene)
     
     scene_file.write('<bsdf type="diffuse" id="%s">\n' % materialName)
     if reflectanceTextureName == "" :
@@ -415,24 +415,24 @@ def exportObject_medium(scene_file, material):
                 export_medium(scene_file,node.inputs[1])
     return ''
 
-def export_material_node(scene_file,currentMaterial, materialName):
+def export_material_node(scene_file,currentMaterial, materialName, scene):
     print("export_material_node : " + currentMaterial.name)
     #print("export_material_node bl_idname :" + currentMaterial.bl_idname)
     if currentMaterial.bl_idname == 'MitsubaBSDFDiffuse':
-        export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, materialName)
+        export_mitsuba_bsdf_diffuse_material(scene_file,currentMaterial, materialName, scene)
     if currentMaterial.bl_idname == 'MitsubaBSDFPlastic':
-        export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, materialName)
+        export_mitsuba_bsdf_plastic_material(scene_file,currentMaterial, materialName, scene)
     if currentMaterial.bl_idname == 'MitsubaBSDFDielectric':
-        export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, materialName)
+        export_mitsuba_bsdf_dielectric_material(scene_file,currentMaterial, materialName, scene)
     if currentMaterial.bl_idname == 'MitsubaBlackBody':
         export_mitsuba_blackbody_material(scene_file,currentMaterial,materialName)
     if currentMaterial.bl_idname == 'MitsubaBSDFConductor':
-        export_mitsuba_conductor_material(scene_file,currentMaterial,materialName)
+        export_mitsuba_conductor_material(scene_file,currentMaterial,materialName, scene)
     if currentMaterial.bl_idname == 'MitsubaBSDFBlend':
-        export_mitsuba_blend_material(scene_file, currentMaterial, materialName)
+        export_mitsuba_blend_material(scene_file, currentMaterial, materialName, scene)
     return ''
 
-def export_material(scene_file, material):
+def export_material(scene_file, material, scene):
     if material is None:
         print("no material on object")
         return ''
@@ -450,11 +450,11 @@ def export_material(scene_file, material):
                 for input in node.inputs:
                     for node_links in input.links:
                         currentMaterial =  node_links.from_node
-                        export_material_node(scene_file,currentMaterial, material.name)
+                        export_material_node(scene_file,currentMaterial, material.name, scene)
     return''
 
 def createDefaultExportDirectories(scene_file, scene):
-    texturePath = bpy.path.abspath(bpy.data.scenes[0].exportpath + 'textures')
+    texturePath = bpy.path.abspath(scene.exportpath + 'textures')
     print("Exporting textures to: ")
     print(texturePath)
 
@@ -464,7 +464,7 @@ def createDefaultExportDirectories(scene_file, scene):
         os.makedirs(texturePath)
 
 def export_gometry_as_obj(scene_file, scene, frameNumber):
-    objects = bpy.data.objects
+    objects = scene.objects
     for object in objects:
         print("exporting:")
         print(object.name)
@@ -472,15 +472,15 @@ def export_gometry_as_obj(scene_file, scene, frameNumber):
         for i in range(len(object.material_slots)):
             material = object.material_slots[i].material
             if material.name not in exportedMaterials:
-                export_material(scene_file, material)
+                export_material(scene_file, material, scene)
                 exportedMaterials.append(material.name)
 
         if object is not None and object.type != 'CAMERA' and object.type == 'MESH':
             bpy.ops.object.select_all(action="DESELECT")
-            object.select_set(True) # 2.8+ selection method.
+            object.select_set(True, view_layer=scene.view_layers[0]) # 2.8+ selection method.
 
-            objFilePath = bpy.data.scenes[0].exportpath + 'meshes' + frameNumber +'/' + object.name + '.obj'
-            objFolderPath = bpy.data.scenes[0].exportpath + 'meshes' + frameNumber + '/'
+            objFilePath = scene.exportpath + 'meshes' + frameNumber +'/' + object.name + '.obj'
+            objFolderPath = scene.exportpath + 'meshes' + frameNumber + '/'
             if not os.path.exists(objFolderPath):
                 print('Meshes directory did not exist, creating: ')
                 print(objFolderPath)
@@ -500,8 +500,8 @@ def export_integrator(scene_file, scene):
     
     scene_file.write('<integrator type="%s">\n' % (scene.integrators))
     if scene.integrators == 'path':
-        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
-        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((scene.path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((scene.path_integrator_rr_depth)))
         
         if scene.path_integrator_hide_emitters :
             scene_file.write('<boolean name="hide_emitters" value="true"/>\n')
@@ -509,16 +509,16 @@ def export_integrator(scene_file, scene):
             scene_file.write('<boolean name="hide_emitters" value="false"/>\n')
 
     if scene.integrators == 'volpathsimple':
-        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
-        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((scene.path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((scene.path_integrator_rr_depth)))
 
     if scene.integrators == 'volpath':
-        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_max_depth)))
-        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((bpy.data.scenes[0].path_integrator_rr_depth)))
+        scene_file.write('<integer name="max_depth" value="%s"/>\n' %((scene.path_integrator_max_depth)))
+        scene_file.write('<integer name="rr_depth" value="%s"/>\n' %((scene.path_integrator_rr_depth)))
 
     if scene.integrators == 'direct':
-        scene_file.write('<integer name="emitter_samples" value="%s"/>\n' %((bpy.data.scenes[0].direct_integrator_emitter_samples)))
-        scene_file.write('<integer name="bsdf_samples" value="%s"/>\n' %((bpy.data.scenes[0].direct_integrator_bsdf_samples)))
+        scene_file.write('<integer name="emitter_samples" value="%s"/>\n' %((scene.direct_integrator_emitter_samples)))
+        scene_file.write('<integer name="bsdf_samples" value="%s"/>\n' %((scene.direct_integrator_bsdf_samples)))
 
     scene_file.write('</integrator>\n')
 
@@ -537,8 +537,8 @@ def export_Mitsuba(filepath, scene , frameNumber):
         createDefaultExportDirectories(scene_file,scene)
         scene_begin(scene_file)
         export_integrator(scene_file, scene)
-        export_camera(scene_file)
-        export_EnviromentMap(scene_file)
+        export_camera(scene_file, scene)
+        export_EnviromentMap(scene_file, scene)
         export_lights(scene_file,scene)
         export_gometry_as_obj(scene_file,scene, frameNumber)
         scene_end(scene_file)
