@@ -479,8 +479,8 @@ def export_gometry_as_obj(scene_file, scene, frameNumber):
             bpy.ops.object.select_all(action="DESELECT")
             object.select_set(True, view_layer=scene.view_layers[0]) # 2.8+ selection method.
 
-            objFilePath = scene.exportpath + 'meshes' + frameNumber +'/' + object.name + '.obj'
-            objFolderPath = scene.exportpath + 'meshes' + frameNumber + '/'
+            objFilePath =  bpy.path.abspath(scene.exportpath + 'meshes' + frameNumber +'/' + object.name + '.obj')
+            objFolderPath =  bpy.path.abspath(scene.exportpath + 'meshes' + frameNumber + '/')
             if not os.path.exists(objFolderPath):
                 print('Meshes directory did not exist, creating: ')
                 print(objFolderPath)

@@ -1,4 +1,5 @@
 import bpy
+import os
 from . import render_exporter
 
 class ExportMitsuba2Scene(bpy.types.Operator):
@@ -12,12 +13,13 @@ class ExportMitsuba2Scene(bpy.types.Operator):
         currentScene = bpy.context.scene
         print ("Current selected scene : " + currentScene.name)
         print("Scene output path:")
-        print(currentScene.exportpath)
+        exportPath = bpy.path.abspath(currentScene.exportpath)
+        print(exportPath)
 
         for frameNumber in range(currentScene.batch_frame_start, currentScene.batch_frame_end +1):
             currentScene.frame_set(frameNumber)
             print("Exporting frame: %s" % (frameNumber))
-            render_exporter.export_Mitsuba(currentScene.exportpath, currentScene, '{0:05d}'.format(frameNumber))
+            render_exporter.export_Mitsuba(exportPath, currentScene, '{0:05d}'.format(frameNumber))
         self.report({'INFO'}, "Export complete.")
         return {"FINISHED"}
 
